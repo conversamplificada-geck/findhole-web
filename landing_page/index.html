@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FindHole - Gestão Inteligente de Buracos nas Vias Públicas</title>
+    <meta name="description"
+        content="Plataforma de gestão e monitorização de buracos em vias públicas para câmaras municipais e juntas de freguesia.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+
+
+    <!-- Icons (Phosphor Icons for a modern look) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container navbar-content">
+            <a href="#" class="logo">
+                <i class="ph-fill ph-road-horizon"></i>
+                FindHole
+            </a>
+            <div class="nav-links">
+                <a href="#problema">O Problema</a>
+                <a href="#solucao">A Solução</a>
+                <a href="#funcionalidades">Funcionalidades</a>
+                <a href="#beneficios">Benefícios</a>
+                <a href="#contato" class="btn btn-primary">Solicitar Acesso</a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Abrir menu">
+                <i class="ph ph-list"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu">
+        <a href="#problema">O Problema</a>
+        <a href="#solucao">A Solução</a>
+        <a href="#funcionalidades">Funcionalidades</a>
+        <a href="#beneficios">Benefícios</a>
+        <a href="#contato" class="btn btn-primary">Solicitar Acesso</a>
+    </div>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="container hero-content">
+            <div class="hero-text">
+                <span class="badge">Novo Piloto Disponível</span>
+                <h1>Gestão inteligente de buracos nas vias públicas</h1>
+                <p>Centralize a localização, fotos e estado das ocorrências numa única plataforma. Simples, rápido e
+                    transparente.</p>
+                <div class="hero-actions">
+                    <a href="#contato" class="btn btn-primary">Solicitar acesso ao piloto</a>
+                    <a href="#solucao" class="btn btn-outline">Saber mais</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="map-mockup">
+                    <div class="map-bg"></div>
+                    <!-- Markers -->
+                    <div class="marker marker-red" style="top: 30%; left: 40%;" title="Aberto"></div>
+                    <div class="marker marker-yellow" style="top: 50%; left: 60%;" title="Em análise"></div>
+                    <div class="marker marker-green" style="top: 20%; left: 70%;" title="Resolvido"></div>
+
+                    <div class="floating-card status-card">
+                        <div class="status-icon warning"><i class="ph-fill ph-warning"></i></div>
+                        <div class="status-info">
+                            <span class="label">Rua da Liberdade</span>
+                            <span class="value">Buraco perigoso reportado</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Problem Section -->
+    <section id="problema" class="section bg-light">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2>O desafio atual da manutenção</h2>
+                <p>A gestão manual e descentralizada gera ineficiência e reclamações.</p>
+            </div>
+            <div class="grid grid-3">
+                <div class="card problem-card">
+                    <div class="icon-box danger"><i class="ph ph-megaphone"></i></div>
+                    <h3>Canais Dispersos</h3>
+                    <p>Reclamações chegam por telefone, email, redes sociais e balcão, tornando difícil ter uma visão
+                        única.</p>
+                </div>
+                <div class="card problem-card">
+                    <div class="icon-box danger"><i class="ph ph-copy"></i></div>
+                    <h3>Duplicação</h3>
+                    <p>Múltiplos cidadãos reportam o mesmo buraco, gerando ordens de serviço duplicadas e desperdício de
+                        tempo.</p>
+                </div>
+                <div class="card problem-card">
+                    <div class="icon-box danger"><i class="ph ph-list-dashes"></i></div>
+                    <h3>Falta de Priorização</h3>
+                    <p>Sem fotos ou localização precisa, é impossível saber qual buraco oferece maior risco à segurança.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section id="solucao" class="section">
+        <div class="container grid grid-2-bias">
+            <div class="solution-text">
+                <span class="subtitle">A Solução FindHole</span>
+                <h2>Centralização e Controle Total</h2>
+                <p>A FindHole é a plataforma digital que conecta cidadãos e equipas técnicas.</p>
+                <ul class="check-list">
+                    <li><i class="ph-fill ph-check-circle"></i> <strong>Centralize</strong> todos os reportes num único
+                        mapa.</li>
+                    <li><i class="ph-fill ph-check-circle"></i> <strong>Geolocalização</strong> precisa para as equipas
+                        de rua.</li>
+                    <li><i class="ph-fill ph-check-circle"></i> <strong>Histórico</strong> completo de cada ocorrência.
+                    </li>
+                    <li><i class="ph-fill ph-check-circle"></i> <strong>Gestão de Estado</strong> em tempo real (Aberto
+                        a Resolvido).</li>
+                </ul>
+            </div>
+            <div class="solution-visual">
+                <div class="app-mockup">
+                    <div class="mockup-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                    </div>
+                    <div class="mockup-body">
+                        <div class="app-row header-row">
+                            <div class="app-col">ID</div>
+                            <div class="app-col">Local</div>
+                            <div class="app-col">Estado</div>
+                        </div>
+                        <div class="app-row">
+                            <div class="app-col">#042</div>
+                            <div class="app-col">Av. Central</div>
+                            <div class="app-col"><span class="tag tag-red">Aberto</span></div>
+                        </div>
+                        <div class="app-row">
+                            <div class="app-col">#041</div>
+                            <div class="app-col">R. das Flores</div>
+                            <div class="app-col"><span class="tag tag-yellow">Em Análise</span></div>
+                        </div>
+                        <div class="app-row">
+                            <div class="app-col">#039</div>
+                            <div class="app-col">Praceta Norte</div>
+                            <div class="app-col"><span class="tag tag-green">Resolvido</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="funcionalidades" class="section bg-dark text-white">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2>Funcionalidades Poderosas</h2>
+                <p>Tudo o que precisa para uma gestão urbana eficiente.</p>
+            </div>
+            <div class="grid grid-4">
+                <div class="feature-item">
+                    <i class="ph ph-map-pin"></i>
+                    <h3>GPS Automático</h3>
+                    <p>Localização exata da ocorrência no mapa.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="ph ph-camera"></i>
+                    <h3>Registo Fotográfico</h3>
+                    <p>Evidência visual do problema e da resolução.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="ph ph-file-text"></i>
+                    <h3>Status em Tempo Real</h3>
+                    <p>Acompanhe desde a abertura até ao fecho.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="ph ph-users"></i>
+                    <h3>Perfis de Acesso</h3>
+                    <p>Áreas distintas para Técnicos e Administradores.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="ph ph-exclude"></i>
+                    <h3>Anti-Duplicação</h3>
+                    <p>O mapa inteligente agrupa reportes próximos.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="ph ph-buildings"></i>
+                    <h3>Gestão de Empreiteiros</h3>
+                    <p>Atribua tarefas a empresas externas.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="ph ph-chart-bar"></i>
+                    <h3>Relatórios</h3>
+                    <p>Métricas de tempo de resposta e custos.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="ph ph-device-mobile"></i>
+                    <h3>Mobile First</h3>
+                    <p>Funciona perfeitamente em tablets e smartphones.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Citizens & Benefits Section -->
+    <section id="beneficios" class="section">
+        <div class="container grid grid-2">
+            <div class="card benefit-group">
+                <h3><i class="ph-fill ph-users-three"></i> Participação do Cidadão</h3>
+                <p>O FindHole permite que os munícipes sejam os seus olhos na rua.</p>
+                <ul class="check-list small">
+                    <li>Reporte simples sem login complexo.</li>
+                    <li>Feedback imediato se o buraco já foi reportado.</li>
+                    <li>Acompanhamento público do estado (Transparência).</li>
+                </ul>
+            </div>
+            <div class="card benefit-group highlight">
+                <h3><i class="ph-fill ph-bank"></i> Para o Município</h3>
+                <ul class="value-list">
+                    <li><strong>Redução de Custos:</strong> Otimização das rotas das equipas.</li>
+                    <li><strong>Menos Reclamações:</strong> Cidadão informado não reclama duas vezes.</li>
+                    <li><strong>Imagem Moderna:</strong> Gestão proativa e tecnológica.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pilot / CTA Section -->
+    <section id="contato" class="section cta-section">
+        <div class="container">
+            <div class="cta-card">
+                <div class="cta-content">
+                    <h2>Pronto para testar no seu município?</h2>
+                    <p>Estamos à procura de parceiros para o nosso <strong>Projeto Piloto</strong>. Implementação
+                        rápida, customizada e acompanhada.</p>
+                    <div class="pilot-badges">
+                        <span><i class="ph-fill ph-rocket"></i> Setup Rápido</span>
+                        <span><i class="ph-fill ph-wrench"></i> Suporte Dedicado</span>
+                    </div>
+                </div>
+
+                <div class="cta-form-wrapper">
+                    <form id="leadForm" class="contact-form">
+                        <h3>Solicitar Piloto</h3>
+                        <div class="form-group">
+                            <label for="name">Nome Completo</label>
+                            <input type="text" id="name" placeholder="Ex: João Silva" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Institucional</label>
+                            <input type="email" id="email" placeholder="nome@municipio.pt" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="org">Organização</label>
+                                <input type="text" id="org" placeholder="Câmara de..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="role">Cargo</label>
+                                <input type="text" id="role" placeholder="Vereador, Técnico..." required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Mensagem (Opcional)</label>
+                            <textarea id="message" rows="3"
+                                placeholder="Dúvidas ou necessidades específicas..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Enviar Pedido</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <span class="logo-text">FindHole</span>
+                <p>Soluções inteligentes para cidades melhores.</p>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacidade</a>
+                <a href="#">Termos</a>
+                <a href="#">Contato</a>
+            </div>
+            <div class="footer-copy">
+                &copy; 2024 FindHole. Todos os direitos reservados.
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
