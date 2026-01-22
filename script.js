@@ -1,25 +1,58 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // =========================
-    // 1) CONFIG (EDITA AQUI)
-    // =========================
-    const MAPBOX_TOKEN = "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
+    // -----------------------------
+    // Config (replace with your Supabase settings)
+    // -----------------------------
     const SUPABASE_URL = "https://nqkekpwjzjdjtufwdbls.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
 
-    // Centro inicial do mapa (Maia / Porto como default)
-    const DEFAULT_CENTER = { lng: -8.621, lat: 41.2279 };
-    const DEFAULT_ZOOM = 12.5;
+    // Your Mapbox public token (ok to be public)
+    const MAPBOX_TOKEN =
+        "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
 
-    // =========================
-    // 2) MOBILE MENU
-    // =========================
+    // -----------------------------
+    // Init Supabase
+    // -----------------------------
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // -----------------------------
+    // UI Elements
+    // -----------------------------
     const menuBtn = document.querySelector(".mobile-menu-btn");
     const mobileMenu = document.querySelector(".mobile-menu");
 
+    const btnAuth = document.getElementById("btnAuth");
+    const btnAuthMobile = document.getElementById("btnAuthMobile");
+    const btnLogout = document.getElementById("btnLogout");
+
+    const btnNewReport = document.getElementById("btnNewReport");
+    const btnNewReportMobile = document.getElementById("btnNewReportMobile");
+
+    const authBackdrop = document.getElementById("authBackdrop");
+    const authClose = document.getElementById("authClose");
+    const tabLogin = document.getElementById("tabLogin");
+    const tabSignup = document.getElementById("tabSignup");
+    const loginForm = document.getElementById("loginForm");
+    const signupForm = document.getElementById("signupForm");
+
+    const reportBackdrop = document.getElementById("reportBackdrop");
+    const reportClose = document.getElementById("reportClose");
+    const reportForm = document.getElementById("reportForm");
+
+    const reportTitleInput = document.getElementById("reportTitleInput");
+    const reportDescInput = document.getElementById("reportDescInput");
+    const reportSeverityInput = document.getElementById("reportSeverityInput");
+    const reportLat = document.getElementById("reportLat");
+    const reportLng = document.getElementById("reportLng");
+
+    // Lead Form (kept as "fake submit" for now)
+    const leadForm = document.getElementById("leadForm");
+
+    // -----------------------------
+    // Mobile menu
+    // -----------------------------
     if (menuBtn && mobileMenu) {
         menuBtn.addEventListener("click", () => {
             mobileMenu.classList.toggle("active");
-
             const icon = menuBtn.querySelector("i");
             if (mobileMenu.classList.contains("active")) {
                 icon.classList.replace("ph-list", "ph-x");
@@ -37,218 +70,344 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // =========================
-    // 3) SUPABASE CLIENT
-    // =========================
-    const supabase =
-        window.supabase?.createClient && SUPABASE_URL && SUPABASE_ANON_KEY
-            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-            : null;
+    // -----------------------------
+    // Mapbox setup
+    // -----------------------------
+    mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    // =========================
-    // 4) MAPBOX INIT
-    // =========================
-    const mapEl = document.getElementById("map");
-    const cardStreet = document.getElementById("cardStreet");
-    const cardText = document.getElementById("cardText");
+    const map = new mapboxgl.Map({
+        container: "map",
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [-8.621, 41.2279], // Maia-ish default
+        zoom: 13,
+    });
 
-    if (!mapEl) {
-        console.warn("Elemento #map não encontrado.");
-    } else if (!MAPBOX_TOKEN || MAPBOX_TOKEN.includes("COLOCA_AQUI")) {
-        console.warn("Define o MAPBOX_TOKEN no script.js");
-        if (cardText) cardText.textContent = "Falta configurar o MAPBOX_TOKEN.";
-    } else {
-        // eslint-disable-next-line no-undef
-        mapboxgl.accessToken = MAPBOX_TOKEN;
+    map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-        // eslint-disable-next-line no-undef
-        const map = new mapboxgl.Map({
-            container: "map",
-            style: "mapbox://styles/mapbox/streets-v12",
-            center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
-            zoom: DEFAULT_ZOOM,
-        });
+    const markersById = new Map();
+    let selectedCoords = null;
 
-        // Controls
-        // eslint-disable-next-line no-undef
-        map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-        // Estado interno de markers para refresh
-        let currentMarkers = [];
-
-        function clearMarkers() {
-            currentMarkers.forEach((m) => m.remove());
-            currentMarkers = [];
-        }
-
-        function severityToColor(severity) {
-            const s = String(severity || "").toLowerCase();
-            if (s === "high") return "#EF4444";   // vermelho
-            if (s === "medium") return "#F59E0B"; // laranja
-            return "#10B981";                     // verde (low/default)
-        }
-
-        function statusLabel(status) {
-            const s = String(status || "").toLowerCase();
-            if (s === "in_progress") return "Em progresso";
-            if (s === "resolved") return "Resolvido";
-            return "Aberto";
-        }
-
-        function escapeHtml(str) {
-            return String(str ?? "")
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#039;");
-        }
-
-        function buildPopup(p) {
-            const title = escapeHtml(p.title || "Ocorrência");
-            const desc = escapeHtml(p.description || "");
-            const sev = escapeHtml(p.severity || "low");
-            const st = escapeHtml(statusLabel(p.status || "open"));
-
-            return `
-        <div>
-          <div class="popup-title">${title}</div>
-          <div class="popup-meta">${desc}</div>
-          <div class="popup-badge">Severidade: ${sev} • Estado: ${st}</div>
-        </div>
-      `;
-        }
-
-        async function loadPotholes() {
-            if (!supabase) {
-                if (cardText) cardText.textContent = "Supabase não configurado (URL/ANON KEY).";
-                return;
-            }
-
-            try {
-                if (cardText) cardText.textContent = "A carregar ocorrências do Supabase...";
-
-                const { data, error } = await supabase
-                    .from("potholes")
-                    .select("id, created_at, title, description, severity, status, lat, lng")
-                    .order("created_at", { ascending: false });
-
-                if (error) throw error;
-
-                clearMarkers();
-
-                const rows = Array.isArray(data) ? data : [];
-                if (rows.length === 0) {
-                    if (cardText) cardText.textContent = "Sem ocorrências ainda.";
-                    return;
-                }
-
-                // Atualiza card com a última ocorrência (a mais recente)
-                const latest = rows[0];
-                if (cardStreet) cardStreet.textContent = "Ocorrências";
-                if (cardText) cardText.textContent = `${rows.length} registo(s) carregado(s).`;
-
-                // Para ajustar o mapa aos markers
-                // eslint-disable-next-line no-undef
-                const bounds = new mapboxgl.LngLatBounds();
-
-                rows.forEach((p) => {
-                    const lat = Number(p.lat);
-                    const lng = Number(p.lng);
-
-                    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-                    const el = document.createElement("div");
-                    el.style.width = "18px";
-                    el.style.height = "18px";
-                    el.style.borderRadius = "999px";
-                    el.style.border = "3px solid white";
-                    el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.25)";
-                    el.style.background = severityToColor(p.severity);
-                    el.style.cursor = "pointer";
-
-                    // eslint-disable-next-line no-undef
-                    const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(buildPopup(p));
-
-                    // eslint-disable-next-line no-undef
-                    const marker = new mapboxgl.Marker({ element: el })
-                        .setLngLat([lng, lat])
-                        .setPopup(popup)
-                        .addTo(map);
-
-                    el.addEventListener("click", () => {
-                        if (cardStreet) cardStreet.textContent = "Selecionado";
-                        if (cardText) cardText.textContent = `${p.title || "Ocorrência"} • ${statusLabel(p.status)} • ${p.severity || "low"}`;
-                    });
-
-                    currentMarkers.push(marker);
-                    bounds.extend([lng, lat]);
-                });
-
-                // Ajusta vista (se houver pelo menos 1 marker válido)
-                if (!bounds.isEmpty()) {
-                    map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 900 });
-                }
-            } catch (err) {
-                console.error("Erro ao carregar potholes:", err);
-                if (cardText) cardText.textContent = "Erro a carregar ocorrências (ver consola).";
-            }
-        }
-
-        map.on("load", () => {
-            loadPotholes();
-
-            // Realtime opcional (se tiveres Realtime ligado no Supabase para a tabela)
-            // Faz refresh leve quando houver mudanças.
-            if (supabase?.channel) {
-                supabase
-                    .channel("potholes-realtime")
-                    .on(
-                        "postgres_changes",
-                        { event: "*", schema: "public", table: "potholes" },
-                        () => loadPotholes()
-                    )
-                    .subscribe();
-            }
-        });
+    function severityColor(sev) {
+        if (sev === "high") return "#ef4444";
+        if (sev === "medium") return "#f59e0b";
+        return "#10b981";
     }
 
-    // =========================
-    // 5) FORM (mantém simulação + preparado para gravar)
-    // =========================
-    const form = document.getElementById("leadForm");
+    function statusLabel(status) {
+        if (status === "open") return "Aberto";
+        if (status === "in_progress") return "Em progresso";
+        if (status === "resolved") return "Resolvido";
+        return status || "";
+    }
 
-    if (form) {
-        form.addEventListener("submit", async (e) => {
+    function popupHtml(row) {
+        const sevPt = row.severity === "high" ? "Alta" : row.severity === "medium" ? "Média" : "Baixa";
+        return `
+      <div style="min-width:220px;">
+        <div style="font-weight:900; margin-bottom:6px;">${escapeHtml(row.title || "Ocorrência")}</div>
+        <div style="color:#475569; font-weight:700; margin-bottom:8px;">
+          ${sevPt} • ${statusLabel(row.status)}
+        </div>
+        ${row.description ? `<div style="color:#334155;">${escapeHtml(row.description)}</div>` : ""}
+        <div style="margin-top:10px; color:#94a3b8; font-weight:700; font-size:12px;">
+          ${row.created_at ? new Date(row.created_at).toLocaleString() : ""}
+        </div>
+      </div>
+    `;
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function upsertMarker(row) {
+        if (!row || !row.id) return;
+
+        const existing = markersById.get(row.id);
+        if (existing) {
+            // Update popup content if needed
+            existing.getPopup().setHTML(popupHtml(row));
+            return;
+        }
+
+        const el = document.createElement("div");
+        el.style.width = "14px";
+        el.style.height = "14px";
+        el.style.borderRadius = "50%";
+        el.style.background = severityColor(row.severity);
+        el.style.border = "3px solid white";
+        el.style.boxShadow = "0 8px 18px rgba(2,6,23,0.25)";
+        el.style.cursor = "pointer";
+
+        const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml(row));
+
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([row.lng, row.lat])
+            .setPopup(popup)
+            .addTo(map);
+
+        markersById.set(row.id, marker);
+    }
+
+    async function loadPotholes() {
+        const { data, error } = await supabase
+            .from("potholes")
+            .select("id, created_at, title, description, severity, status, lat, lng")
+            .order("created_at", { ascending: false })
+            .limit(200);
+
+        if (error) {
+            console.error("Load potholes error:", error);
+            return;
+        }
+
+        (data || []).forEach(upsertMarker);
+    }
+
+    map.on("load", () => {
+        loadPotholes();
+    });
+
+    // Click map to set coords (only useful when report modal is open)
+    map.on("click", (e) => {
+        if (!reportBackdrop.classList.contains("open")) return;
+
+        selectedCoords = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+        reportLat.value = selectedCoords.lat.toFixed(6);
+        reportLng.value = selectedCoords.lng.toFixed(6);
+    });
+
+    // -----------------------------
+    // Auth modal helpers
+    // -----------------------------
+    function openAuthModal() {
+        authBackdrop.classList.add("open");
+        authBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeAuthModal() {
+        authBackdrop.classList.remove("open");
+        authBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    function openReportModal() {
+        reportBackdrop.classList.add("open");
+        reportBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeReportModal() {
+        reportBackdrop.classList.remove("open");
+        reportBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    function setTab(which) {
+        if (which === "login") {
+            tabLogin.classList.add("active");
+            tabSignup.classList.remove("active");
+            loginForm.style.display = "block";
+            signupForm.style.display = "none";
+        } else {
+            tabLogin.classList.remove("active");
+            tabSignup.classList.add("active");
+            loginForm.style.display = "none";
+            signupForm.style.display = "block";
+        }
+    }
+
+    tabLogin.addEventListener("click", () => setTab("login"));
+    tabSignup.addEventListener("click", () => setTab("signup"));
+
+    authClose.addEventListener("click", closeAuthModal);
+    authBackdrop.addEventListener("click", (e) => {
+        if (e.target === authBackdrop) closeAuthModal();
+    });
+
+    reportClose.addEventListener("click", closeReportModal);
+    reportBackdrop.addEventListener("click", (e) => {
+        if (e.target === reportBackdrop) closeReportModal();
+    });
+
+    // -----------------------------
+    // Session UI state
+    // -----------------------------
+    function setLoggedOutUI() {
+        btnAuth.textContent = "Entrar";
+        btnAuthMobile.textContent = "Entrar";
+        btnLogout.style.display = "none";
+        btnNewReport.style.display = "none";
+        btnNewReportMobile.style.display = "none";
+    }
+
+    function setLoggedInUI(email) {
+        btnAuth.textContent = email ? email : "Conta";
+        btnAuthMobile.textContent = "Conta";
+        btnLogout.style.display = "inline-flex";
+        btnNewReport.style.display = "inline-flex";
+        btnNewReportMobile.style.display = "inline-flex";
+    }
+
+    async function refreshSessionUI() {
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
+
+        if (!session) {
+            setLoggedOutUI();
+            return;
+        }
+
+        setLoggedInUI(session.user?.email);
+    }
+
+    // Listen for auth changes
+    supabase.auth.onAuthStateChange((_event, session) => {
+        if (!session) setLoggedOutUI();
+        else setLoggedInUI(session.user?.email);
+    });
+
+    // Buttons: open auth modal
+    btnAuth.addEventListener("click", openAuthModal);
+    btnAuthMobile.addEventListener("click", () => {
+        if (mobileMenu) mobileMenu.classList.remove("active");
+        openAuthModal();
+    });
+
+    // Logout
+    btnLogout.addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        closeAuthModal();
+        alert("Sessão terminada.");
+    });
+
+    // New report buttons
+    btnNewReport.addEventListener("click", () => {
+        selectedCoords = null;
+        reportForm.reset();
+        reportLat.value = "";
+        reportLng.value = "";
+        openReportModal();
+    });
+
+    btnNewReportMobile.addEventListener("click", () => {
+        if (mobileMenu) mobileMenu.classList.remove("active");
+        selectedCoords = null;
+        reportForm.reset();
+        reportLat.value = "";
+        reportLng.value = "";
+        openReportModal();
+    });
+
+    // -----------------------------
+    // Login / Signup handlers
+    // -----------------------------
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value;
+
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            alert(`Erro ao entrar: ${error.message}`);
+            return;
+        }
+
+        alert("Login feito com sucesso.");
+        closeAuthModal();
+    });
+
+    signupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById("signupName").value.trim();
+        const email = document.getElementById("signupEmail").value.trim();
+        const password = document.getElementById("signupPassword").value;
+
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { name },
+            },
+        });
+
+        if (error) {
+            alert(`Erro ao criar conta: ${error.message}`);
+            return;
+        }
+
+        // If email confirmation is enabled, session may be null until confirmed.
+        if (!data.session) {
+            alert("Conta criada. Confirma o email para ativar e depois faz login.");
+            setTab("login");
+            return;
+        }
+
+        alert("Conta criada e sessão iniciada.");
+        closeAuthModal();
+    });
+
+    // -----------------------------
+    // Create new pothole
+    // -----------------------------
+    reportForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
+
+        if (!session) {
+            alert("Faz login antes de criar uma ocorrência.");
+            closeReportModal();
+            openAuthModal();
+            return;
+        }
+
+        if (!selectedCoords) {
+            alert("Seleciona a posição no mapa: abre o modal e clica no mapa.");
+            return;
+        }
+
+        const payload = {
+            title: reportTitleInput.value.trim(),
+            description: reportDescInput.value.trim(),
+            severity: reportSeverityInput.value,
+            status: "open",
+            lat: selectedCoords.lat,
+            lng: selectedCoords.lng,
+            user_id: session.user.id, // requires column + RLS policies already created by you
+        };
+
+        const { data: inserted, error } = await supabase.from("potholes").insert(payload).select("*").single();
+
+        if (error) {
+            alert(`Erro ao guardar: ${error.message}`);
+            return;
+        }
+
+        upsertMarker(inserted);
+        closeReportModal();
+        alert("Ocorrência criada com sucesso.");
+    });
+
+    // -----------------------------
+    // Lead form (kept as demo)
+    // -----------------------------
+    if (leadForm) {
+        leadForm.addEventListener("submit", (e) => {
             e.preventDefault();
 
-            const btn = form.querySelector('button[type="submit"]');
+            const btn = leadForm.querySelector('button[type="submit"]');
             const originalText = btn.innerText;
 
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Enviando...';
             btn.disabled = true;
             btn.style.opacity = "0.7";
-
-            try {
-                // Se quiseres gravar leads no Supabase:
-                // 1) cria uma tabela "leads" no Supabase
-                // 2) descomenta este bloco
-                if (supabase) {
-                    const payload = {
-                        name: document.getElementById("name")?.value?.trim() || null,
-                        email: document.getElementById("email")?.value?.trim() || null,
-                        org: document.getElementById("org")?.value?.trim() || null,
-                        role: document.getElementById("role")?.value?.trim() || null,
-                        message: document.getElementById("message")?.value?.trim() || null,
-                    };
-
-                    // Se ainda não existir a tabela leads, isto pode dar erro — e seguimos igual com a simulação.
-                    await supabase.from("leads").insert([payload]);
-                }
-            } catch (err) {
-                // Não bloqueia o fluxo — é só uma landing/teste.
-                console.warn("Não foi possível gravar lead no Supabase (ok em fase de teste):", err);
-            }
 
             setTimeout(() => {
                 btn.innerHTML = '<i class="ph-fill ph-check-circle"></i> Pedido Enviado!';
@@ -258,15 +417,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Obrigado pelo seu interesse!\n\nRecebemos os seus dados e a nossa equipa entrará em contacto em breve para agendar a demonstração do piloto."
                 );
 
-                form.reset();
+                leadForm.reset();
 
                 setTimeout(() => {
                     btn.innerText = originalText;
                     btn.disabled = false;
                     btn.style.opacity = "1";
                     btn.style.backgroundColor = "";
-                }, 3000);
-            }, 900);
+                }, 2500);
+            }, 1200);
         });
     }
+
+    // Initial state
+    refreshSessionUI();
 });
