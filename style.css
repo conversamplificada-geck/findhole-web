@@ -1,25 +1,19 @@
 /* 
    FindHole Demo Styles 
    Theme: Gov-tech, Clean, Trustworthy
-   Colors: Blue (Authority), Green (Success), Gray (Neutral)
 */
 :root {
-    /* Palette */
     --primary: #0F172A;
-    /* Deep Slate Blue */
     --primary-light: #334155;
+
     --accent: #10B981;
-    /* Vivid Green */
     --accent-hover: #059669;
+
     --danger: #EF4444;
-    /* Red for critical issues */
     --warning: #F59E0B;
-    /* Amber for analysis */
 
     --bg-body: #F8FAFC;
-    /* Very light gray-blue */
     --bg-surface: #FFFFFF;
-    --bg-dark: #1E293B;
 
     --text-main: #1E293B;
     --text-muted: #64748B;
@@ -27,10 +21,10 @@
 
     --border: #E2E8F0;
 
-    /* Spacing */
     --container-width: 1200px;
     --header-height: 70px;
     --radius: 8px;
+
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
@@ -47,7 +41,6 @@ html {
 
 body {
     font-family: 'Inter', sans-serif;
-    color: --text-main;
     background-color: var(--bg-body);
     line-height: 1.6;
     color: var(--text-main);
@@ -210,68 +203,77 @@ body {
     gap: 16px;
 }
 
-/* Map Mockup */
+/* Legend */
+.legend {
+    margin-top: 24px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 0.95rem;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 99px;
+    display: inline-block;
+}
+
+.dot-high {
+    background: var(--danger);
+}
+
+.dot-medium {
+    background: var(--warning);
+}
+
+.dot-low {
+    background: var(--accent);
+}
+
+/* Map (real) */
 .hero-visual {
     position: relative;
 }
 
-.map-mockup {
+.map-wrap {
+    position: relative;
     width: 100%;
     height: 400px;
-    background-color: #CBD5E1;
     border-radius: 16px;
-    position: relative;
     box-shadow: var(--shadow-lg);
     border: 4px solid white;
     overflow: hidden;
-    background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%2394a3b8" fill-opacity="0.2"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+    background: #E2E8F0;
 }
 
-.map-bg {
+.map {
     width: 100%;
     height: 100%;
-    background-color: #E2E8F0;
 }
 
-.marker {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 3px solid white;
-    position: absolute;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.marker:hover {
-    transform: scale(1.2);
-}
-
-.marker-red {
-    background: var(--danger);
-}
-
-.marker-yellow {
-    background: var(--warning);
-}
-
-.marker-green {
-    background: var(--accent);
-}
-
+/* Floating card */
 .floating-card {
     position: absolute;
-    bottom: 20px;
-    right: 20px;
+    bottom: 16px;
+    right: 16px;
     background: white;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     gap: 12px;
     box-shadow: var(--shadow);
-    max-width: 220px;
+    max-width: 260px;
+    z-index: 5;
 }
 
 .status-icon {
@@ -297,13 +299,48 @@ body {
 .status-info .label {
     font-size: 0.75rem;
     color: var(--text-muted);
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
 }
 
 .status-info .value {
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Mapbox tweaks */
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib {
+    opacity: 0.9;
+}
+
+.mapboxgl-popup-content {
+    font-family: 'Inter', sans-serif;
+    border-radius: 12px;
+    padding: 12px 12px;
+}
+
+.popup-title {
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: var(--primary);
+}
+
+.popup-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.popup-badge {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 99px;
+    background: #F1F5F9;
+    color: var(--primary);
 }
 
 /* Sections */
@@ -413,6 +450,7 @@ body {
 .feature-item h3 {
     font-size: 1.1rem;
     margin-bottom: 8px;
+    color: white;
 }
 
 .feature-item p {
@@ -455,10 +493,6 @@ body {
     background: #10B981;
 }
 
-.mockup-body {
-    padding: 0;
-}
-
 .app-row {
     display: grid;
     grid-template-columns: 1fr 2fr 1fr;
@@ -477,7 +511,7 @@ body {
     font-size: 0.75rem;
     padding: 2px 8px;
     border-radius: 99px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .tag-red {
@@ -582,7 +616,7 @@ body {
     align-items: center;
     gap: 8px;
     margin-bottom: 12px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--accent);
 }
 
@@ -608,7 +642,7 @@ body {
 label {
     display: block;
     font-size: 0.9rem;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 8px;
     color: var(--text-main);
 }
@@ -631,6 +665,12 @@ textarea:focus {
     box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
 }
 
+.form-hint {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
 /* Footer */
 .footer {
     background: #0F172A;
@@ -648,7 +688,7 @@ textarea:focus {
 
 .logo-text {
     color: white;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 1.1rem;
 }
 
@@ -666,7 +706,7 @@ textarea:focus {
     color: white;
 }
 
-/* Responsive Media Queries */
+/* Responsive */
 @media (max-width: 900px) {
     .nav-links {
         display: none;
@@ -690,6 +730,10 @@ textarea:focus {
     }
 
     .hero-actions {
+        justify-content: center;
+    }
+
+    .legend {
         justify-content: center;
     }
 
@@ -743,6 +787,7 @@ textarea:focus {
     flex-direction: column;
     gap: 16px;
     border-bottom: 1px solid var(--border);
+    z-index: 999;
 }
 
 .mobile-menu.active {
@@ -752,7 +797,7 @@ textarea:focus {
 .mobile-menu a {
     text-decoration: none;
     color: var(--text-main);
-    font-weight: 500;
-    font-size: 1.1rem;
+    font-weight: 600;
+    font-size: 1.05rem;
     padding: 8px 0;
 }

@@ -2,23 +2,26 @@
 <html lang="pt-PT">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FindHole - Gestão Inteligente de Buracos nas Vias Públicas</title>
     <meta name="description"
-        content="Plataforma de gestão e monitorização de buracos em vias públicas para câmaras municipais e juntas de freguesia.">
+        content="Plataforma de gestão e monitorização de buracos em vias públicas para câmaras municipais e juntas de freguesia." />
 
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
 
-
-    <!-- Icons (Phosphor Icons for a modern look) -->
+    <!-- Icons (Phosphor) -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Mapbox GL (CSS) -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -64,24 +67,30 @@
                     <a href="#contato" class="btn btn-primary">Solicitar acesso ao piloto</a>
                     <a href="#solucao" class="btn btn-outline">Saber mais</a>
                 </div>
-            </div>
-            <div class="hero-visual">
-                <div class="map-mockup">
-                    <div class="map-bg"></div>
-                    <!-- Markers -->
-                    <div class="marker marker-red" style="top: 30%; left: 40%;" title="Aberto"></div>
-                    <div class="marker marker-yellow" style="top: 50%; left: 60%;" title="Em análise"></div>
-                    <div class="marker marker-green" style="top: 20%; left: 70%;" title="Resolvido"></div>
 
-                    <div class="floating-card status-card">
+                <div class="legend">
+                    <div class="legend-item"><span class="legend-dot dot-high"></span> Alta</div>
+                    <div class="legend-item"><span class="legend-dot dot-medium"></span> Média</div>
+                    <div class="legend-item"><span class="legend-dot dot-low"></span> Baixa</div>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <!-- MAP REAL -->
+                <div class="map-wrap">
+                    <div id="map" class="map"></div>
+
+                    <!-- Card flutuante (exemplo) -->
+                    <div class="floating-card status-card" id="mapStatusCard" aria-live="polite">
                         <div class="status-icon warning"><i class="ph-fill ph-warning"></i></div>
                         <div class="status-info">
-                            <span class="label">Rua da Liberdade</span>
-                            <span class="value">Buraco perigoso reportado</span>
+                            <span class="label" id="cardStreet">Mapa</span>
+                            <span class="value" id="cardText">A carregar ocorrências...</span>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </header>
 
@@ -130,7 +139,8 @@
                     <li><i class="ph-fill ph-check-circle"></i> <strong>Histórico</strong> completo de cada ocorrência.
                     </li>
                     <li><i class="ph-fill ph-check-circle"></i> <strong>Gestão de Estado</strong> em tempo real (Aberto
-                        a Resolvido).</li>
+                        a
+                        Resolvido).</li>
                 </ul>
             </div>
             <div class="solution-visual">
@@ -249,7 +259,8 @@
                 <div class="cta-content">
                     <h2>Pronto para testar no seu município?</h2>
                     <p>Estamos à procura de parceiros para o nosso <strong>Projeto Piloto</strong>. Implementação
-                        rápida, customizada e acompanhada.</p>
+                        rápida,
+                        customizada e acompanhada.</p>
                     <div class="pilot-badges">
                         <span><i class="ph-fill ph-rocket"></i> Setup Rápido</span>
                         <span><i class="ph-fill ph-wrench"></i> Suporte Dedicado</span>
@@ -261,20 +272,20 @@
                         <h3>Solicitar Piloto</h3>
                         <div class="form-group">
                             <label for="name">Nome Completo</label>
-                            <input type="text" id="name" placeholder="Ex: João Silva" required>
+                            <input type="text" id="name" placeholder="Ex: João Silva" required />
                         </div>
                         <div class="form-group">
                             <label for="email">Email Institucional</label>
-                            <input type="email" id="email" placeholder="nome@municipio.pt" required>
+                            <input type="email" id="email" placeholder="nome@municipio.pt" required />
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="org">Organização</label>
-                                <input type="text" id="org" placeholder="Câmara de..." required>
+                                <input type="text" id="org" placeholder="Câmara de..." required />
                             </div>
                             <div class="form-group">
                                 <label for="role">Cargo</label>
-                                <input type="text" id="role" placeholder="Vereador, Técnico..." required>
+                                <input type="text" id="role" placeholder="Vereador, Técnico..." required />
                             </div>
                         </div>
                         <div class="form-group">
@@ -283,6 +294,8 @@
                                 placeholder="Dúvidas ou necessidades específicas..."></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Enviar Pedido</button>
+                        <p class="form-hint">Dica: este formulário pode gravar no Supabase quando quiseres (já deixei
+                            preparado no JS).</p>
                     </form>
                 </div>
             </div>
@@ -306,6 +319,12 @@
             </div>
         </div>
     </footer>
+
+    <!-- Mapbox GL (JS) -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+
+    <!-- Supabase (JS) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script src="script.js"></script>
 </body>
