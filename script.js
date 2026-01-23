@@ -1,8 +1,43 @@
 document.addEventListener("DOMContentLoaded", () => {
     // ====== CONFIG (preencher) ======
     const SUPABASE_URL = "https://nqkekpwjzjdjtufwdbls.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
-    const MAPBOX_TOKEN = "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
+    const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
+    const MAPBOX_TOKEN =
+        "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
+
+    // Demo fallback: mostra pontos no mapa quando não há dados no Supabase
+    const DEMO_FALLBACK_ENABLED = true;
+    const DEMO_POTHOLES = [
+        {
+            id: "demo-1",
+            title: "Buraco profundo (demo)",
+            severity: "high",
+            status: "open",
+            lat: 41.2333,
+            lng: -8.6158,
+        },
+        {
+            id: "demo-2",
+            title: "Pavimento degradado (demo)",
+            severity: "medium",
+            status: "open",
+            lat: 41.2256,
+            lng: -8.6285,
+        },
+        {
+            id: "demo-3",
+            title: "Tampa irregular (demo)",
+            severity: "low",
+            status: "open",
+            lat: 41.2199,
+            lng: -8.6109,
+        },
+    ];
+
+    // Footer year
+    const yearEl = document.getElementById("year");
+    if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
     // ====== BASIC UI: mobile menu ======
     const menuBtn = document.querySelector(".mobile-menu-btn");
@@ -187,8 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const feature = data?.features?.[0];
         const address = feature?.place_name || "";
 
-        // tentar extrair “zona” (bairro/localidade/cidade)
-        // Mapbox devolve context com vários níveis
         let area = "";
         const ctx = feature?.context || [];
 
@@ -198,7 +231,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         area = neighborhood?.text || locality?.text || place?.text || "";
 
-        // fallback: se feature for "place", usa o próprio texto
         if (!area && feature?.place_type?.includes("place")) area = feature?.text || "";
 
         return { address, area };
@@ -242,9 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             (err) => {
                 occError.textContent =
-                    err?.code === 1
-                        ? "Permissão de localização recusada."
-                        : "Não foi possível obter a tua localização.";
+                    err?.code === 1 ? "Permissão de localização recusada." : "Não foi possível obter a tua localização.";
                 occError.classList.remove("hidden");
             },
             { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
@@ -270,9 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
         el.style.boxShadow = "0 6px 14px rgba(0,0,0,0.20)";
         el.style.cursor = "pointer";
 
-        const m = new mapboxgl.Marker({ element: el })
-            .setLngLat([row.lng, row.lat])
-            .addTo(map);
+        const m = new mapboxgl.Marker({ element: el }).setLngLat([row.lng, row.lat]).addTo(map);
 
         el.addEventListener("click", () => {
             map.flyTo({ center: [row.lng, row.lat], zoom: Math.max(map.getZoom(), 14) });
@@ -282,18 +310,35 @@ document.addEventListener("DOMContentLoaded", () => {
         markers.set(row.id, m);
     }
 
+    function clearMarkers() {
+        markers.forEach((m) => m.remove());
+        markers.clear();
+    }
+
+    function showDemoIfNeeded(reasonText) {
+        if (!DEMO_FALLBACK_ENABLED) return;
+        clearMarkers();
+        DEMO_POTHOLES.forEach(renderPotholeMarker);
+        mapCardBody.textContent = reasonText || "A mostrar pontos de demonstração (sem dados no sistema).";
+    }
+
     async function loadPotholes() {
         const { data, error } = await supabase.from("potholes").select("*").order("created_at", { ascending: false });
+
         if (error) {
             console.warn("Erro ao carregar potholes:", error.message);
+            showDemoIfNeeded("Sem dados reais (erro ao carregar). A mostrar pontos de demonstração.");
             return;
         }
 
-        // clear existing
-        markers.forEach((m) => m.remove());
-        markers.clear();
+        clearMarkers();
 
-        (data || []).forEach(renderPotholeMarker);
+        if (!data || data.length === 0) {
+            showDemoIfNeeded("Sem ocorrências registadas ainda. A mostrar pontos de demonstração.");
+            return;
+        }
+
+        data.forEach(renderPotholeMarker);
     }
 
     // ====== Create pothole (requires auth + RLS) ======
@@ -332,8 +377,8 @@ document.addEventListener("DOMContentLoaded", () => {
             status: "open",
             lat,
             lng,
-            address: (occAddress.value || null),
-            area: (occArea.value || null),
+            address: occAddress.value || null,
+            area: occArea.value || null,
             user_id: user.id,
         };
 
@@ -392,7 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
         await refreshAuthUI();
     });
 
-    // ====== Lead form (mantém o teu fluxo) ======
+    // ====== Lead form ======
     const form = document.getElementById("leadForm");
     if (form) {
         form.addEventListener("submit", async (e) => {
@@ -405,16 +450,14 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.disabled = true;
             btn.style.opacity = "0.7";
 
-            // Se tiveres tabela "leads" no Supabase, podes gravar aqui (opcional)
             try {
                 const name = form.querySelector('input[name="name"]').value.trim();
                 const email = form.querySelector('input[name="email"]').value.trim();
                 const message = form.querySelector('textarea[name="message"]').value.trim();
 
-                // exemplo (descomenta se tiveres tabela leads):
-                // await supabase.from("leads").insert({ name, email, message });
-
-                void name; void email; void message;
+                void name;
+                void email;
+                void message;
             } catch (err) {
                 console.warn("Lead submit warning:", err);
             }
