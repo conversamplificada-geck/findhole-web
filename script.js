@@ -176,7 +176,13 @@ document.addEventListener("DOMContentLoaded", () => {
             closeAuthModal();
         } catch (err) {
             console.error("[AUTH] error", err);
-            authError.textContent = err?.message || "Erro ao autenticar.";
+
+            const msg =
+                err?.name === "AbortError"
+                    ? "Sem resposta do servidor (timeout). Verifica adblock/proxy/firewall e se o domínio do Supabase está acessível."
+                    : (err?.message || "Erro ao autenticar.");
+
+            authError.textContent = msg;
             authError.classList.remove("hidden");
         } finally {
             authSubmit.disabled = false;
