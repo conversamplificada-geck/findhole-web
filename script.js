@@ -60,8 +60,22 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ====== Supabase client ======
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    function fetchWithTimeout(url, options = {}) {
+        const controller = new AbortController();
+        const timeoutMs = 12000;
+
+        const id = setTimeout(() => controller.abort(), timeoutMs);
+
+        return fetch(url, {
+            ...options,
+            signal: controller.signal,
+        }).finally(() => clearTimeout(id));
+    }
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { fetch: fetchWithTimeout },
+    });
+
 
     // ====== Mapbox init ======
     mapboxgl.accessToken = MAPBOX_TOKEN;
