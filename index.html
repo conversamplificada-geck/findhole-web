@@ -1,329 +1,256 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-PT">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>FindHole - Gestão Inteligente de Buracos nas Vias Públicas</title>
     <meta name="description"
-        content="Plataforma de gestão e monitorização de buracos em vias públicas para câmaras municipais e juntas de freguesia." />
+        content="Plataforma de gestão e monitorização de buracos em vias públicas. Simples, rápida e transparente." />
 
-    <!-- Google Fonts -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="style.css" />
-
-    <!-- Icons (Phosphor) -->
+    <!-- Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- Mapbox GL (CSS) -->
+    <!-- Mapbox -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-
-    <!-- Navigation -->
-    <nav class="navbar">
+    <!-- NAV -->
+    <header class="navbar">
         <div class="container navbar-content">
-            <a href="#" class="logo">
+            <a class="logo" href="#">
                 <i class="ph-fill ph-road-horizon"></i>
-                FindHole
+                <span>FindHole</span>
             </a>
-            <div class="nav-links">
+
+            <nav class="nav-links">
                 <a href="#problema">O Problema</a>
                 <a href="#solucao">A Solução</a>
                 <a href="#funcionalidades">Funcionalidades</a>
                 <a href="#beneficios">Benefícios</a>
-                <a href="#contato" class="btn btn-primary">Solicitar Acesso</a>
-            </div>
+                <button id="btnNewOccurrence" class="btn btn-outline hidden">Nova ocorrência</button>
+                <button id="btnAuth" class="btn btn-primary">Entrar</button>
+            </nav>
+
             <button class="mobile-menu-btn" aria-label="Abrir menu">
                 <i class="ph ph-list"></i>
             </button>
         </div>
-    </nav>
 
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu">
-        <a href="#problema">O Problema</a>
-        <a href="#solucao">A Solução</a>
-        <a href="#funcionalidades">Funcionalidades</a>
-        <a href="#beneficios">Benefícios</a>
-        <a href="#contato" class="btn btn-primary">Solicitar Acesso</a>
-    </div>
-
-    <!-- Hero Section -->
-    <header class="hero">
-        <div class="container hero-content">
-            <div class="hero-text">
-                <span class="badge">Novo Piloto Disponível</span>
-                <h1>Gestão inteligente de buracos nas vias públicas</h1>
-                <p>Centralize a localização, fotos e estado das ocorrências numa única plataforma. Simples, rápido e
-                    transparente.</p>
-                <div class="hero-actions">
-                    <a href="#contato" class="btn btn-primary">Solicitar acesso ao piloto</a>
-                    <a href="#solucao" class="btn btn-outline">Saber mais</a>
-                </div>
-
-                <div class="legend">
-                    <div class="legend-item"><span class="legend-dot dot-high"></span> Alta</div>
-                    <div class="legend-item"><span class="legend-dot dot-medium"></span> Média</div>
-                    <div class="legend-item"><span class="legend-dot dot-low"></span> Baixa</div>
-                </div>
-            </div>
-
-            <div class="hero-visual">
-                <!-- MAP REAL -->
-                <div class="map-wrap">
-                    <div id="map" class="map"></div>
-
-                    <!-- Card flutuante (exemplo) -->
-                    <div class="floating-card status-card" id="mapStatusCard" aria-live="polite">
-                        <div class="status-icon warning"><i class="ph-fill ph-warning"></i></div>
-                        <div class="status-info">
-                            <span class="label" id="cardStreet">Mapa</span>
-                            <span class="value" id="cardText">A carregar ocorrências...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        <div class="mobile-menu">
+            <a href="#problema">O Problema</a>
+            <a href="#solucao">A Solução</a>
+            <a href="#funcionalidades">Funcionalidades</a>
+            <a href="#beneficios">Benefícios</a>
+            <button id="btnNewOccurrenceMobile" class="btn btn-outline hidden">Nova ocorrência</button>
+            <button id="btnAuthMobile" class="btn btn-primary">Entrar</button>
         </div>
     </header>
 
-    <!-- Problem Section -->
-    <section id="problema" class="section bg-light">
-        <div class="container">
-            <div class="section-header text-center">
-                <h2>O desafio atual da manutenção</h2>
-                <p>A gestão manual e descentralizada gera ineficiência e reclamações.</p>
-            </div>
-            <div class="grid grid-3">
-                <div class="card problem-card">
-                    <div class="icon-box danger"><i class="ph ph-megaphone"></i></div>
-                    <h3>Canais Dispersos</h3>
-                    <p>Reclamações chegam por telefone, email, redes sociais e balcão, tornando difícil ter uma visão
-                        única.</p>
-                </div>
-                <div class="card problem-card">
-                    <div class="icon-box danger"><i class="ph ph-copy"></i></div>
-                    <h3>Duplicação</h3>
-                    <p>Múltiplos cidadãos reportam o mesmo buraco, gerando ordens de serviço duplicadas e desperdício de
-                        tempo.</p>
-                </div>
-                <div class="card problem-card">
-                    <div class="icon-box danger"><i class="ph ph-list-dashes"></i></div>
-                    <h3>Falta de Priorização</h3>
-                    <p>Sem fotos ou localização precisa, é impossível saber qual buraco oferece maior risco à segurança.
+    <!-- HERO -->
+    <main>
+        <section class="hero">
+            <div class="container hero-grid">
+                <div class="hero-left">
+                    <span class="badge">Novo Piloto Disponível</span>
+
+                    <h1>Gestão inteligente<br />de buracos nas vias<br />públicas</h1>
+
+                    <p>
+                        Centralize a localização, fotos e estado das ocorrências numa única plataforma.
+                        Simples, rápido e transparente.
                     </p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Solution Section -->
-    <section id="solucao" class="section">
-        <div class="container grid grid-2-bias">
-            <div class="solution-text">
-                <span class="subtitle">A Solução FindHole</span>
-                <h2>Centralização e Controle Total</h2>
-                <p>A FindHole é a plataforma digital que conecta cidadãos e equipas técnicas.</p>
-                <ul class="check-list">
-                    <li><i class="ph-fill ph-check-circle"></i> <strong>Centralize</strong> todos os reportes num único
-                        mapa.</li>
-                    <li><i class="ph-fill ph-check-circle"></i> <strong>Geolocalização</strong> precisa para as equipas
-                        de rua.</li>
-                    <li><i class="ph-fill ph-check-circle"></i> <strong>Histórico</strong> completo de cada ocorrência.
-                    </li>
-                    <li><i class="ph-fill ph-check-circle"></i> <strong>Gestão de Estado</strong> em tempo real (Aberto
-                        a
-                        Resolvido).</li>
-                </ul>
-            </div>
-            <div class="solution-visual">
-                <div class="app-mockup">
-                    <div class="mockup-header">
-                        <span class="dot red"></span>
-                        <span class="dot yellow"></span>
-                        <span class="dot green"></span>
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="#contato">Solicitar acesso ao piloto</a>
+                        <a class="btn btn-outline" href="#solucao">Saber mais</a>
                     </div>
-                    <div class="mockup-body">
-                        <div class="app-row header-row">
-                            <div class="app-col">ID</div>
-                            <div class="app-col">Local</div>
-                            <div class="app-col">Estado</div>
-                        </div>
-                        <div class="app-row">
-                            <div class="app-col">#042</div>
-                            <div class="app-col">Av. Central</div>
-                            <div class="app-col"><span class="tag tag-red">Aberto</span></div>
-                        </div>
-                        <div class="app-row">
-                            <div class="app-col">#041</div>
-                            <div class="app-col">R. das Flores</div>
-                            <div class="app-col"><span class="tag tag-yellow">Em Análise</span></div>
-                        </div>
-                        <div class="app-row">
-                            <div class="app-col">#039</div>
-                            <div class="app-col">Praceta Norte</div>
-                            <div class="app-col"><span class="tag tag-green">Resolvido</span></div>
+
+                    <div class="legend">
+                        <span><i class="dot dot-high"></i> Alta</span>
+                        <span><i class="dot dot-medium"></i> Média</span>
+                        <span><i class="dot dot-low"></i> Baixa</span>
+                    </div>
+                </div>
+
+                <div class="hero-right">
+                    <div class="map-shell">
+                        <div id="map"></div>
+                        <div id="mapCard" class="map-card">
+                            <div class="map-card-title">Selecionado</div>
+                            <div id="mapCardBody" class="map-card-body">Clica num ponto para ver detalhes.</div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Features Section -->
-    <section id="funcionalidades" class="section bg-dark text-white">
-        <div class="container">
-            <div class="section-header text-center">
-                <h2>Funcionalidades Poderosas</h2>
-                <p>Tudo o que precisa para uma gestão urbana eficiente.</p>
+        <!-- CONTENT (placeholder simples para manter anchors) -->
+        <section id="problema" class="section">
+            <div class="container">
+                <h2>O Problema</h2>
+                <p>…</p>
             </div>
-            <div class="grid grid-4">
-                <div class="feature-item">
-                    <i class="ph ph-map-pin"></i>
-                    <h3>GPS Automático</h3>
-                    <p>Localização exata da ocorrência no mapa.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="ph ph-camera"></i>
-                    <h3>Registo Fotográfico</h3>
-                    <p>Evidência visual do problema e da resolução.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="ph ph-file-text"></i>
-                    <h3>Status em Tempo Real</h3>
-                    <p>Acompanhe desde a abertura até ao fecho.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="ph ph-users"></i>
-                    <h3>Perfis de Acesso</h3>
-                    <p>Áreas distintas para Técnicos e Administradores.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="ph ph-exclude"></i>
-                    <h3>Anti-Duplicação</h3>
-                    <p>O mapa inteligente agrupa reportes próximos.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="ph ph-buildings"></i>
-                    <h3>Gestão de Empreiteiros</h3>
-                    <p>Atribua tarefas a empresas externas.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="ph ph-chart-bar"></i>
-                    <h3>Relatórios</h3>
-                    <p>Métricas de tempo de resposta e custos.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="ph ph-device-mobile"></i>
-                    <h3>Mobile First</h3>
-                    <p>Funciona perfeitamente em tablets e smartphones.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Citizens & Benefits Section -->
-    <section id="beneficios" class="section">
-        <div class="container grid grid-2">
-            <div class="card benefit-group">
-                <h3><i class="ph-fill ph-users-three"></i> Participação do Cidadão</h3>
-                <p>O FindHole permite que os munícipes sejam os seus olhos na rua.</p>
-                <ul class="check-list small">
-                    <li>Reporte simples sem login complexo.</li>
-                    <li>Feedback imediato se o buraco já foi reportado.</li>
-                    <li>Acompanhamento público do estado (Transparência).</li>
-                </ul>
+        <section id="solucao" class="section alt">
+            <div class="container">
+                <h2>A Solução</h2>
+                <p>…</p>
             </div>
-            <div class="card benefit-group highlight">
-                <h3><i class="ph-fill ph-bank"></i> Para o Município</h3>
-                <ul class="value-list">
-                    <li><strong>Redução de Custos:</strong> Otimização das rotas das equipas.</li>
-                    <li><strong>Menos Reclamações:</strong> Cidadão informado não reclama duas vezes.</li>
-                    <li><strong>Imagem Moderna:</strong> Gestão proativa e tecnológica.</li>
-                </ul>
+        </section>
+
+        <section id="funcionalidades" class="section">
+            <div class="container">
+                <h2>Funcionalidades</h2>
+                <p>…</p>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Pilot / CTA Section -->
-    <section id="contato" class="section cta-section">
-        <div class="container">
-            <div class="cta-card">
-                <div class="cta-content">
-                    <h2>Pronto para testar no seu município?</h2>
-                    <p>Estamos à procura de parceiros para o nosso <strong>Projeto Piloto</strong>. Implementação
-                        rápida,
-                        customizada e acompanhada.</p>
-                    <div class="pilot-badges">
-                        <span><i class="ph-fill ph-rocket"></i> Setup Rápido</span>
-                        <span><i class="ph-fill ph-wrench"></i> Suporte Dedicado</span>
-                    </div>
-                </div>
+        <section id="beneficios" class="section alt">
+            <div class="container">
+                <h2>Benefícios</h2>
+                <p>…</p>
+            </div>
+        </section>
 
-                <div class="cta-form-wrapper">
-                    <form id="leadForm" class="contact-form">
-                        <h3>Solicitar Piloto</h3>
-                        <div class="form-group">
-                            <label for="name">Nome Completo</label>
-                            <input type="text" id="name" placeholder="Ex: João Silva" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email Institucional</label>
-                            <input type="email" id="email" placeholder="nome@municipio.pt" required />
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="org">Organização</label>
-                                <input type="text" id="org" placeholder="Câmara de..." required />
+        <!-- CONTACT / LEAD FORM -->
+        <section id="contato" class="section">
+            <div class="container">
+                <div class="card">
+                    <h3>Solicitar acesso</h3>
+                    <p>Deixa os teus dados e marcamos uma demonstração do piloto.</p>
+
+                    <form id="leadForm" class="form">
+                        <div class="grid-2">
+                            <div class="field">
+                                <label>Nome</label>
+                                <input name="name" type="text" placeholder="O teu nome" required />
                             </div>
-                            <div class="form-group">
-                                <label for="role">Cargo</label>
-                                <input type="text" id="role" placeholder="Vereador, Técnico..." required />
+                            <div class="field">
+                                <label>Email</label>
+                                <input name="email" type="email" placeholder="o.teu@email.com" required />
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="message">Mensagem (Opcional)</label>
-                            <textarea id="message" rows="3"
-                                placeholder="Dúvidas ou necessidades específicas..."></textarea>
+
+                        <div class="field">
+                            <label>Mensagem (opcional)</label>
+                            <textarea name="message" rows="4" placeholder="Ex: Câmara / Freguesia / zona…"></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block">Enviar Pedido</button>
+
+                        <button type="submit" class="btn btn-primary full">Enviar Pedido</button>
                     </form>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container footer-content">
-            <div class="footer-brand">
-                <span class="logo-text">FindHole</span>
-                <p>Soluções inteligentes para cidades melhores.</p>
+    <!-- AUTH MODAL -->
+    <div id="authModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h3 id="authTitle">Entrar</h3>
+                <button class="icon-btn" id="authClose" aria-label="Fechar"><i class="ph ph-x"></i></button>
             </div>
-            <div class="footer-links">
-                <a href="#">Privacidade</a>
-                <a href="#">Termos</a>
-                <a href="#">Contato</a>
-            </div>
-            <div class="footer-copy">
-                &copy; 2024 FindHole. Todos os direitos reservados.
-            </div>
-        </div>
-    </footer>
 
-    <!-- Mapbox GL (JS) -->
+            <div class="tabs">
+                <button id="tabLogin" class="tab active" type="button">Login</button>
+                <button id="tabSignup" class="tab" type="button">Criar conta</button>
+            </div>
+
+            <form id="authForm" class="form">
+                <div class="field">
+                    <label>Email</label>
+                    <input id="authEmail" type="email" placeholder="o.teu@email.com" required />
+                </div>
+
+                <div class="field">
+                    <label>Password</label>
+                    <input id="authPassword" type="password" placeholder="••••••••" required />
+                </div>
+
+                <div id="authError" class="error hidden"></div>
+
+                <button id="authSubmit" type="submit" class="btn btn-primary full">Entrar</button>
+            </form>
+        </div>
+        <div class="modal-backdrop" id="authBackdrop"></div>
+    </div>
+
+    <!-- NEW OCCURRENCE MODAL -->
+    <div id="occModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="occTitle">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h3 id="occTitle">Nova ocorrência</h3>
+                <button class="icon-btn" id="occClose" aria-label="Fechar"><i class="ph ph-x"></i></button>
+            </div>
+
+            <form id="occForm" class="form">
+                <div class="field">
+                    <label>Título</label>
+                    <input id="occTitleInput" type="text" placeholder="Ex: Buraco perigoso" required />
+                </div>
+
+                <div class="field">
+                    <label>Descrição</label>
+                    <textarea id="occDescInput" rows="3" placeholder="Ex: Junto à passadeira…" required></textarea>
+                </div>
+
+                <div class="field">
+                    <label>Severidade</label>
+                    <select id="occSeverity">
+                        <option value="low">Baixa</option>
+                        <option value="medium" selected>Média</option>
+                        <option value="high">Alta</option>
+                    </select>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Morada (automática)</label>
+                        <input id="occAddress" type="text" placeholder="Clica no mapa ou usa GPS" readonly />
+                    </div>
+                    <div class="field">
+                        <label>Zona (automática)</label>
+                        <input id="occArea" type="text" placeholder="Ex: Maia / Vermoim" readonly />
+                    </div>
+                </div>
+
+                <!-- Hidden lat/lng: guardamos para o mapa, mas não mostramos -->
+                <input id="occLat" type="hidden" />
+                <input id="occLng" type="hidden" />
+
+                <div class="grid-2">
+                    <button id="btnPickOnMap" type="button" class="btn btn-outline">Escolher no mapa</button>
+                    <button id="btnUseMyLocation" type="button" class="btn btn-outline">Usar a minha
+                        localização</button>
+                </div>
+
+                <div id="occError" class="error hidden"></div>
+
+                <button type="submit" class="btn btn-primary full">Guardar ocorrência</button>
+
+                <p class="hint">Dica: abre o modal e depois clica no mapa para escolher a posição.</p>
+            </form>
+        </div>
+        <div class="modal-backdrop" id="occBackdrop"></div>
+    </div>
+
+    <!-- Libraries -->
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-
-    <!-- Supabase (JS) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <!-- App -->
     <script src="script.js"></script>
 </body>
 
