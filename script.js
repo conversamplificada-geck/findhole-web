@@ -8,6 +8,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuBtn = document.querySelector(".mobile-menu-btn");
     const mobileMenu = document.querySelector(".mobile-menu");
 
+    const btnAuth = document.getElementById("btnAuth");
+    const btnAuthMobile = document.getElementById("btnAuthMobile");
+    const btnLogout = document.getElementById("btnLogout");
+
+    const btnNewReport = document.getElementById("btnNewReport");
+    const btnNewReportMobile = document.getElementById("btnNewReportMobile");
+
+    const authBackdrop = document.getElementById("authBackdrop");
+    const authClose = document.getElementById("authClose");
+    const tabLogin = document.getElementById("tabLogin");
+    const tabSignup = document.getElementById("tabSignup");
+    const loginForm = document.getElementById("loginForm");
+    const signupForm = document.getElementById("signupForm");
+
+    const reportBackdrop = document.getElementById("reportBackdrop");
+    const reportClose = document.getElementById("reportClose");
+    const reportForm = document.getElementById("reportForm");
+
+    const reportTitleInput = document.getElementById("reportTitleInput");
+    const reportDescInput = document.getElementById("reportDescInput");
+    const reportSeverityInput = document.getElementById("reportSeverityInput");
+    const reportLat = document.getElementById("reportLat");
+    const reportLng = document.getElementById("reportLng");
+
+    // Lead Form (kept as "fake submit" for now)
+    const leadForm = document.getElementById("leadForm");
+
+    // -----------------------------
+    // Mobile menu
+    // -----------------------------
     if (menuBtn && mobileMenu) {
         menuBtn.addEventListener("click", () => {
             mobileMenu.classList.toggle("active");
@@ -314,6 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
             occError.classList.remove("hidden");
             return;
         }
+    }
 
         const {
             data: { user },
@@ -398,7 +429,7 @@ document.addEventListener("DOMContentLoaded", () => {
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const btn = form.querySelector('button[type="submit"]');
+            const btn = leadForm.querySelector('button[type="submit"]');
             const originalText = btn.innerText;
 
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Enviando...';
