@@ -129,28 +129,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
     authForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        // feedback imediato
         authError.classList.add("hidden");
         authError.textContent = "";
+        authSubmit.disabled = true;
+        const originalBtnText = authSubmit.textContent;
+        authSubmit.textContent = "A entrar...";
 
         const email = authEmail.value.trim();
         const password = authPassword.value;
 
         try {
+            console.log("[AUTH] submit", { mode: authMode, email });
+
             if (authMode === "signup") {
-                const { error } = await supabase.auth.signUp({ email, password });
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                console.log("[AUTH] signup result", { data, error });
+
                 if (error) throw error;
+
                 closeAuthModal();
                 alert("Conta criada. Confirma o email (se estiver ativo) e faz login.");
-            } else {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                closeAuthModal();
+                return;
             }
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            console.log("[AUTH] login result", { data, error });
+
+            if (error) throw error;
+
+            closeAuthModal();
         } catch (err) {
+            console.error("[AUTH] error", err);
             authError.textContent = err?.message || "Erro ao autenticar.";
             authError.classList.remove("hidden");
+        } finally {
+            authSubmit.disabled = false;
+            authSubmit.textContent = originalBtnText;
         }
     });
+
 
     // ====== OCCURRENCE MODAL ======
     const occModal = document.getElementById("occModal");
