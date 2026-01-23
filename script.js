@@ -1,22 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // -----------------------------
-    // Config (replace with your Supabase settings)
-    // -----------------------------
+    // ====== CONFIG (preencher) ======
     const SUPABASE_URL = "https://nqkekpwjzjdjtufwdbls.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
+    const MAPBOX_TOKEN = "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
 
-    // Your Mapbox public token (ok to be public)
-    const MAPBOX_TOKEN =
-        "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
-
-    // -----------------------------
-    // Init Supabase
-    // -----------------------------
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // -----------------------------
-    // UI Elements
-    // -----------------------------
+    // ====== BASIC UI: mobile menu ======
     const menuBtn = document.querySelector(".mobile-menu-btn");
     const mobileMenu = document.querySelector(".mobile-menu");
 
@@ -54,11 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
         menuBtn.addEventListener("click", () => {
             mobileMenu.classList.toggle("active");
             const icon = menuBtn.querySelector("i");
-            if (mobileMenu.classList.contains("active")) {
-                icon.classList.replace("ph-list", "ph-x");
-            } else {
-                icon.classList.replace("ph-x", "ph-list");
-            }
+            if (mobileMenu.classList.contains("active")) icon.classList.replace("ph-list", "ph-x");
+            else icon.classList.replace("ph-x", "ph-list");
         });
 
         mobileMenu.querySelectorAll("a").forEach((link) => {
@@ -70,22 +55,234 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // -----------------------------
-    // Mapbox setup
-    // -----------------------------
+    // ====== Supabase client ======
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ====== Mapbox init ======
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
     const map = new mapboxgl.Map({
         container: "map",
         style: "mapbox://styles/mapbox/streets-v12",
-        center: [-8.621, 41.2279], // Maia-ish default
-        zoom: 13,
+        center: [-8.621, 41.227], // Maia (default)
+        zoom: 12,
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-    const markersById = new Map();
-    let selectedCoords = null;
+    // UI refs
+    const mapCardBody = document.getElementById("mapCardBody");
+
+    // Auth buttons (desktop/mobile)
+    const btnAuth = document.getElementById("btnAuth");
+    const btnAuthMobile = document.getElementById("btnAuthMobile");
+    const btnNewOccurrence = document.getElementById("btnNewOccurrence");
+    const btnNewOccurrenceMobile = document.getElementById("btnNewOccurrenceMobile");
+
+    // ====== AUTH MODAL ======
+    const authModal = document.getElementById("authModal");
+    const authBackdrop = document.getElementById("authBackdrop");
+    const authClose = document.getElementById("authClose");
+    const tabLogin = document.getElementById("tabLogin");
+    const tabSignup = document.getElementById("tabSignup");
+    const authForm = document.getElementById("authForm");
+    const authEmail = document.getElementById("authEmail");
+    const authPassword = document.getElementById("authPassword");
+    const authSubmit = document.getElementById("authSubmit");
+    const authError = document.getElementById("authError");
+
+    let authMode = "login"; // "login" | "signup"
+
+    function openAuthModal() {
+        authError.classList.add("hidden");
+        authError.textContent = "";
+        authModal.classList.remove("hidden");
+    }
+    function closeAuthModal() {
+        authModal.classList.add("hidden");
+    }
+    function setAuthMode(mode) {
+        authMode = mode;
+        if (mode === "login") {
+            tabLogin.classList.add("active");
+            tabSignup.classList.remove("active");
+            authSubmit.textContent = "Entrar";
+            document.getElementById("authTitle").textContent = "Entrar";
+        } else {
+            tabSignup.classList.add("active");
+            tabLogin.classList.remove("active");
+            authSubmit.textContent = "Criar conta";
+            document.getElementById("authTitle").textContent = "Criar conta";
+        }
+    }
+
+    [btnAuth, btnAuthMobile].forEach((b) => b && b.addEventListener("click", openAuthModal));
+    authBackdrop.addEventListener("click", closeAuthModal);
+    authClose.addEventListener("click", closeAuthModal);
+    tabLogin.addEventListener("click", () => setAuthMode("login"));
+    tabSignup.addEventListener("click", () => setAuthMode("signup"));
+
+    authForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        authError.classList.add("hidden");
+        authError.textContent = "";
+
+        const email = authEmail.value.trim();
+        const password = authPassword.value;
+
+        try {
+            if (authMode === "signup") {
+                const { error } = await supabase.auth.signUp({ email, password });
+                if (error) throw error;
+                closeAuthModal();
+                alert("Conta criada. Confirma o email (se estiver ativo) e faz login.");
+            } else {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                closeAuthModal();
+            }
+        } catch (err) {
+            authError.textContent = err?.message || "Erro ao autenticar.";
+            authError.classList.remove("hidden");
+        }
+    });
+
+    // ====== OCCURRENCE MODAL ======
+    const occModal = document.getElementById("occModal");
+    const occBackdrop = document.getElementById("occBackdrop");
+    const occClose = document.getElementById("occClose");
+
+    const occForm = document.getElementById("occForm");
+    const occTitleInput = document.getElementById("occTitleInput");
+    const occDescInput = document.getElementById("occDescInput");
+    const occSeverity = document.getElementById("occSeverity");
+    const occAddress = document.getElementById("occAddress");
+    const occArea = document.getElementById("occArea");
+    const occLat = document.getElementById("occLat");
+    const occLng = document.getElementById("occLng");
+    const occError = document.getElementById("occError");
+
+    const btnPickOnMap = document.getElementById("btnPickOnMap");
+    const btnUseMyLocation = document.getElementById("btnUseMyLocation");
+
+    let pickMode = false;
+    let pickMarker = null;
+
+    function openOccModal() {
+        occError.classList.add("hidden");
+        occError.textContent = "";
+
+        // reset
+        occForm.reset();
+        occAddress.value = "";
+        occArea.value = "";
+        occLat.value = "";
+        occLng.value = "";
+
+        if (pickMarker) {
+            pickMarker.remove();
+            pickMarker = null;
+        }
+
+        pickMode = true; // por defeito, já pode clicar no mapa
+        occModal.classList.remove("hidden");
+        mapCardBody.textContent = "Modo seleção: clica no mapa para escolher a posição.";
+    }
+
+    function closeOccModal() {
+        pickMode = false;
+        occModal.classList.add("hidden");
+        mapCardBody.textContent = "Clica num ponto para ver detalhes.";
+    }
+
+    [btnNewOccurrence, btnNewOccurrenceMobile].forEach((b) => b && b.addEventListener("click", openOccModal));
+    occBackdrop.addEventListener("click", closeOccModal);
+    occClose.addEventListener("click", closeOccModal);
+
+    btnPickOnMap.addEventListener("click", () => {
+        pickMode = true;
+        mapCardBody.textContent = "Modo seleção: clica no mapa para escolher a posição.";
+    });
+
+    // Reverse geocoding (Mapbox)
+    async function reverseGeocode(lng, lat) {
+        const url =
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json` +
+            `?types=address,poi,place,locality,neighborhood&language=pt&access_token=${MAPBOX_TOKEN}`;
+
+        const res = await fetch(url);
+        if (!res.ok) return { address: "", area: "" };
+
+        const data = await res.json();
+        const feature = data?.features?.[0];
+        const address = feature?.place_name || "";
+
+        // tentar extrair “zona” (bairro/localidade/cidade)
+        // Mapbox devolve context com vários níveis
+        let area = "";
+        const ctx = feature?.context || [];
+
+        const neighborhood = ctx.find((c) => (c?.id || "").startsWith("neighborhood."));
+        const locality = ctx.find((c) => (c?.id || "").startsWith("locality."));
+        const place = ctx.find((c) => (c?.id || "").startsWith("place."));
+
+        area = neighborhood?.text || locality?.text || place?.text || "";
+
+        // fallback: se feature for "place", usa o próprio texto
+        if (!area && feature?.place_type?.includes("place")) area = feature?.text || "";
+
+        return { address, area };
+    }
+
+    async function setPickedPoint(lng, lat) {
+        occLat.value = String(lat);
+        occLng.value = String(lng);
+
+        if (pickMarker) pickMarker.remove();
+        pickMarker = new mapboxgl.Marker({ color: "#111827" }).setLngLat([lng, lat]).addTo(map);
+
+        const { address, area } = await reverseGeocode(lng, lat);
+        occAddress.value = address;
+        occArea.value = area;
+
+        map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14) });
+    }
+
+    map.on("click", async (e) => {
+        if (!pickMode) return;
+        await setPickedPoint(e.lngLat.lng, e.lngLat.lat);
+        mapCardBody.textContent = "Posição definida. Preenche o resto e guarda a ocorrência.";
+    });
+
+    // GPS button
+    btnUseMyLocation.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+            occError.textContent = "O teu browser não suporta geolocalização.";
+            occError.classList.remove("hidden");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                await setPickedPoint(lng, lat);
+                occError.classList.add("hidden");
+                occError.textContent = "";
+            },
+            (err) => {
+                occError.textContent =
+                    err?.code === 1
+                        ? "Permissão de localização recusada."
+                        : "Não foi possível obter a tua localização.";
+                occError.classList.remove("hidden");
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+        );
+    });
+
+    // ====== Load potholes and render markers ======
+    const markers = new Map(); // id -> Marker
 
     function severityColor(sev) {
         if (sev === "high") return "#ef4444";
@@ -93,313 +290,143 @@ document.addEventListener("DOMContentLoaded", () => {
         return "#10b981";
     }
 
-    function statusLabel(status) {
-        if (status === "open") return "Aberto";
-        if (status === "in_progress") return "Em progresso";
-        if (status === "resolved") return "Resolvido";
-        return status || "";
-    }
-
-    function popupHtml(row) {
-        const sevPt = row.severity === "high" ? "Alta" : row.severity === "medium" ? "Média" : "Baixa";
-        return `
-      <div style="min-width:220px;">
-        <div style="font-weight:900; margin-bottom:6px;">${escapeHtml(row.title || "Ocorrência")}</div>
-        <div style="color:#475569; font-weight:700; margin-bottom:8px;">
-          ${sevPt} • ${statusLabel(row.status)}
-        </div>
-        ${row.description ? `<div style="color:#334155;">${escapeHtml(row.description)}</div>` : ""}
-        <div style="margin-top:10px; color:#94a3b8; font-weight:700; font-size:12px;">
-          ${row.created_at ? new Date(row.created_at).toLocaleString() : ""}
-        </div>
-      </div>
-    `;
-    }
-
-    function escapeHtml(str) {
-        return String(str)
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#039;");
-    }
-
-    function upsertMarker(row) {
-        if (!row || !row.id) return;
-
-        const existing = markersById.get(row.id);
-        if (existing) {
-            // Update popup content if needed
-            existing.getPopup().setHTML(popupHtml(row));
-            return;
-        }
-
+    function renderPotholeMarker(row) {
         const el = document.createElement("div");
         el.style.width = "14px";
         el.style.height = "14px";
-        el.style.borderRadius = "50%";
+        el.style.borderRadius = "999px";
         el.style.background = severityColor(row.severity);
-        el.style.border = "3px solid white";
-        el.style.boxShadow = "0 8px 18px rgba(2,6,23,0.25)";
+        el.style.border = "2px solid #ffffff";
+        el.style.boxShadow = "0 6px 14px rgba(0,0,0,0.20)";
         el.style.cursor = "pointer";
 
-        const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml(row));
-
-        const marker = new mapboxgl.Marker(el)
+        const m = new mapboxgl.Marker({ element: el })
             .setLngLat([row.lng, row.lat])
-            .setPopup(popup)
             .addTo(map);
 
-        markersById.set(row.id, marker);
+        el.addEventListener("click", () => {
+            map.flyTo({ center: [row.lng, row.lat], zoom: Math.max(map.getZoom(), 14) });
+            mapCardBody.textContent = `${row.title} • ${row.status || "open"} • ${row.severity}`;
+        });
+
+        markers.set(row.id, m);
     }
 
     async function loadPotholes() {
-        const { data, error } = await supabase
-            .from("potholes")
-            .select("id, created_at, title, description, severity, status, lat, lng")
-            .order("created_at", { ascending: false })
-            .limit(200);
-
+        const { data, error } = await supabase.from("potholes").select("*").order("created_at", { ascending: false });
         if (error) {
-            console.error("Load potholes error:", error);
+            console.warn("Erro ao carregar potholes:", error.message);
             return;
         }
 
-        (data || []).forEach(upsertMarker);
+        // clear existing
+        markers.forEach((m) => m.remove());
+        markers.clear();
+
+        (data || []).forEach(renderPotholeMarker);
     }
 
-    map.on("load", () => {
-        loadPotholes();
-    });
-
-    // Click map to set coords (only useful when report modal is open)
-    map.on("click", (e) => {
-        if (!reportBackdrop.classList.contains("open")) return;
-
-        selectedCoords = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-        reportLat.value = selectedCoords.lat.toFixed(6);
-        reportLng.value = selectedCoords.lng.toFixed(6);
-    });
-
-    // -----------------------------
-    // Auth modal helpers
-    // -----------------------------
-    function openAuthModal() {
-        authBackdrop.classList.add("open");
-        authBackdrop.setAttribute("aria-hidden", "false");
-    }
-
-    function closeAuthModal() {
-        authBackdrop.classList.remove("open");
-        authBackdrop.setAttribute("aria-hidden", "true");
-    }
-
-    function openReportModal() {
-        reportBackdrop.classList.add("open");
-        reportBackdrop.setAttribute("aria-hidden", "false");
-    }
-
-    function closeReportModal() {
-        reportBackdrop.classList.remove("open");
-        reportBackdrop.setAttribute("aria-hidden", "true");
-    }
-
-    function setTab(which) {
-        if (which === "login") {
-            tabLogin.classList.add("active");
-            tabSignup.classList.remove("active");
-            loginForm.style.display = "block";
-            signupForm.style.display = "none";
-        } else {
-            tabLogin.classList.remove("active");
-            tabSignup.classList.add("active");
-            loginForm.style.display = "none";
-            signupForm.style.display = "block";
-        }
-    }
-
-    tabLogin.addEventListener("click", () => setTab("login"));
-    tabSignup.addEventListener("click", () => setTab("signup"));
-
-    authClose.addEventListener("click", closeAuthModal);
-    authBackdrop.addEventListener("click", (e) => {
-        if (e.target === authBackdrop) closeAuthModal();
-    });
-
-    reportClose.addEventListener("click", closeReportModal);
-    reportBackdrop.addEventListener("click", (e) => {
-        if (e.target === reportBackdrop) closeReportModal();
-    });
-
-    // -----------------------------
-    // Session UI state
-    // -----------------------------
-    function setLoggedOutUI() {
-        btnAuth.textContent = "Entrar";
-        btnAuthMobile.textContent = "Entrar";
-        btnLogout.style.display = "none";
-        btnNewReport.style.display = "none";
-        btnNewReportMobile.style.display = "none";
-    }
-
-    function setLoggedInUI(email) {
-        btnAuth.textContent = email ? email : "Conta";
-        btnAuthMobile.textContent = "Conta";
-        btnLogout.style.display = "inline-flex";
-        btnNewReport.style.display = "inline-flex";
-        btnNewReportMobile.style.display = "inline-flex";
-    }
-
-    async function refreshSessionUI() {
-        const { data } = await supabase.auth.getSession();
-        const session = data?.session;
-
-        if (!session) {
-            setLoggedOutUI();
-            return;
-        }
-
-        setLoggedInUI(session.user?.email);
-    }
-
-    // Listen for auth changes
-    supabase.auth.onAuthStateChange((_event, session) => {
-        if (!session) setLoggedOutUI();
-        else setLoggedInUI(session.user?.email);
-    });
-
-    // Buttons: open auth modal
-    btnAuth.addEventListener("click", openAuthModal);
-    btnAuthMobile.addEventListener("click", () => {
-        if (mobileMenu) mobileMenu.classList.remove("active");
-        openAuthModal();
-    });
-
-    // Logout
-    btnLogout.addEventListener("click", async () => {
-        await supabase.auth.signOut();
-        closeAuthModal();
-        alert("Sessão terminada.");
-    });
-
-    // New report buttons
-    btnNewReport.addEventListener("click", () => {
-        selectedCoords = null;
-        reportForm.reset();
-        reportLat.value = "";
-        reportLng.value = "";
-        openReportModal();
-    });
-
-    btnNewReportMobile.addEventListener("click", () => {
-        if (mobileMenu) mobileMenu.classList.remove("active");
-        selectedCoords = null;
-        reportForm.reset();
-        reportLat.value = "";
-        reportLng.value = "";
-        openReportModal();
-    });
-
-    // -----------------------------
-    // Login / Signup handlers
-    // -----------------------------
-    loginForm.addEventListener("submit", async (e) => {
+    // ====== Create pothole (requires auth + RLS) ======
+    occForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+        occError.classList.add("hidden");
+        occError.textContent = "";
 
-        const email = document.getElementById("loginEmail").value.trim();
-        const password = document.getElementById("loginPassword").value;
+        const title = occTitleInput.value.trim();
+        const description = occDescInput.value.trim();
+        const severity = occSeverity.value;
 
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const lat = parseFloat(occLat.value);
+        const lng = parseFloat(occLng.value);
 
-        if (error) {
-            alert(`Erro ao entrar: ${error.message}`);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            occError.textContent = "Escolhe uma posição no mapa (ou usa a tua localização) antes de guardar.";
+            occError.classList.remove("hidden");
             return;
         }
+    }
 
-        alert("Login feito com sucesso.");
-        closeAuthModal();
-    });
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
 
-    signupForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const name = document.getElementById("signupName").value.trim();
-        const email = document.getElementById("signupEmail").value.trim();
-        const password = document.getElementById("signupPassword").value;
-
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { name },
-            },
-        });
-
-        if (error) {
-            alert(`Erro ao criar conta: ${error.message}`);
-            return;
-        }
-
-        // If email confirmation is enabled, session may be null until confirmed.
-        if (!data.session) {
-            alert("Conta criada. Confirma o email para ativar e depois faz login.");
-            setTab("login");
-            return;
-        }
-
-        alert("Conta criada e sessão iniciada.");
-        closeAuthModal();
-    });
-
-    // -----------------------------
-    // Create new pothole
-    // -----------------------------
-    reportForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const { data } = await supabase.auth.getSession();
-        const session = data?.session;
-
-        if (!session) {
-            alert("Faz login antes de criar uma ocorrência.");
-            closeReportModal();
-            openAuthModal();
-            return;
-        }
-
-        if (!selectedCoords) {
-            alert("Seleciona a posição no mapa: abre o modal e clica no mapa.");
+        if (!user) {
+            occError.textContent = "Tens de fazer login para criar uma ocorrência.";
+            occError.classList.remove("hidden");
             return;
         }
 
         const payload = {
-            title: reportTitleInput.value.trim(),
-            description: reportDescInput.value.trim(),
-            severity: reportSeverityInput.value,
+            title,
+            description,
+            severity,
             status: "open",
-            lat: selectedCoords.lat,
-            lng: selectedCoords.lng,
-            user_id: session.user.id, // requires column + RLS policies already created by you
+            lat,
+            lng,
+            address: (occAddress.value || null),
+            area: (occArea.value || null),
+            user_id: user.id,
         };
 
-        const { data: inserted, error } = await supabase.from("potholes").insert(payload).select("*").single();
-
+        const { error } = await supabase.from("potholes").insert(payload);
         if (error) {
-            alert(`Erro ao guardar: ${error.message}`);
+            occError.textContent = error.message || "Erro ao gravar ocorrência.";
+            occError.classList.remove("hidden");
             return;
         }
 
-        upsertMarker(inserted);
-        closeReportModal();
-        alert("Ocorrência criada com sucesso.");
+        closeOccModal();
+        await loadPotholes();
     });
 
-    // -----------------------------
-    // Lead form (kept as demo)
-    // -----------------------------
-    if (leadForm) {
-        leadForm.addEventListener("submit", (e) => {
+    // ====== Auth state -> UI ======
+    async function refreshAuthUI() {
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+
+        const label = user?.email ? user.email : "Entrar";
+
+        if (btnAuth) btnAuth.textContent = label;
+        if (btnAuthMobile) btnAuthMobile.textContent = label;
+
+        // mostrar “Nova ocorrência” só com login
+        const showNew = Boolean(user);
+        [btnNewOccurrence, btnNewOccurrenceMobile].forEach((b) => {
+            if (!b) return;
+            b.classList.toggle("hidden", !showNew);
+        });
+
+        // se já está logado, clicar no botão mostra opção de logout simples
+        const attachLogout = (button) => {
+            if (!button) return;
+            button.onclick = async () => {
+                const {
+                    data: { user: u },
+                } = await supabase.auth.getUser();
+
+                if (!u) return openAuthModal();
+
+                const ok = confirm(`Sair da conta ${u.email}?`);
+                if (!ok) return;
+
+                await supabase.auth.signOut();
+                await refreshAuthUI();
+            };
+        };
+
+        attachLogout(btnAuth);
+        attachLogout(btnAuthMobile);
+    }
+
+    supabase.auth.onAuthStateChange(async () => {
+        await refreshAuthUI();
+    });
+
+    // ====== Lead form (mantém o teu fluxo) ======
+    const form = document.getElementById("leadForm");
+    if (form) {
+        form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
             const btn = leadForm.querySelector('button[type="submit"]');
@@ -409,15 +436,25 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.disabled = true;
             btn.style.opacity = "0.7";
 
+            // Se tiveres tabela "leads" no Supabase, podes gravar aqui (opcional)
+            try {
+                const name = form.querySelector('input[name="name"]').value.trim();
+                const email = form.querySelector('input[name="email"]').value.trim();
+                const message = form.querySelector('textarea[name="message"]').value.trim();
+
+                // exemplo (descomenta se tiveres tabela leads):
+                // await supabase.from("leads").insert({ name, email, message });
+
+                void name; void email; void message;
+            } catch (err) {
+                console.warn("Lead submit warning:", err);
+            }
+
             setTimeout(() => {
                 btn.innerHTML = '<i class="ph-fill ph-check-circle"></i> Pedido Enviado!';
                 btn.style.backgroundColor = "var(--accent)";
-
-                alert(
-                    "Obrigado pelo seu interesse!\n\nRecebemos os seus dados e a nossa equipa entrará em contacto em breve para agendar a demonstração do piloto."
-                );
-
-                leadForm.reset();
+                alert("Obrigado pelo seu interesse!\n\nRecebemos os seus dados e a nossa equipa entrará em contacto em breve.");
+                form.reset();
 
                 setTimeout(() => {
                     btn.innerText = originalText;
@@ -425,10 +462,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     btn.style.opacity = "1";
                     btn.style.backgroundColor = "";
                 }, 2500);
-            }, 1200);
+            }, 700);
         });
     }
 
-    // Initial state
-    refreshSessionUI();
+    // ====== Boot ======
+    (async () => {
+        await refreshAuthUI();
+        map.on("load", loadPotholes);
+    })();
 });
