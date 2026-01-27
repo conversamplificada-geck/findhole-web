@@ -41,8 +41,8 @@
             </nav>
 
             <div class="header-cta">
-                <button id="btnLogin" class="btn btn-accent">Entrar</button>
-                <button class="mobile-menu-btn" aria-label="Abrir menu">
+                <button id="btnLogin" class="btn btn-accent" type="button">Entrar</button>
+                <button class="mobile-menu-btn" aria-label="Abrir menu" type="button">
                     <i class="ph ph-list"></i>
                 </button>
             </div>
@@ -86,7 +86,7 @@
                             <div class="map-title">Mapa (piloto)</div>
 
                             <div class="map-actions">
-                                <button id="btnNewOccurrence" class="btn btn-outline hidden">
+                                <button id="btnNewOccurrence" class="btn btn-outline hidden" type="button">
                                     <i class="ph ph-plus"></i>
                                     Nova ocorrência
                                 </button>
@@ -113,7 +113,7 @@
                     </div>
 
                     <div class="mobile-actions">
-                        <button id="btnNewOccurrenceMobile" class="btn btn-accent full hidden">
+                        <button id="btnNewOccurrenceMobile" class="btn btn-accent full hidden" type="button">
                             <i class="ph ph-plus"></i>
                             Nova ocorrência
                         </button>
@@ -180,7 +180,8 @@
         <div class="modal-panel">
             <div class="modal-header">
                 <h3 id="authTitle">Entrar</h3>
-                <button class="icon-btn" id="authClose" aria-label="Fechar"><i class="ph ph-x"></i></button>
+                <button class="icon-btn" id="authClose" aria-label="Fechar" type="button"><i
+                        class="ph ph-x"></i></button>
             </div>
 
             <div class="tabs">
@@ -212,7 +213,8 @@
         <div class="modal-panel">
             <div class="modal-header">
                 <h3 id="occTitle">Nova ocorrência</h3>
-                <button class="icon-btn" id="occClose" aria-label="Fechar"><i class="ph ph-x"></i></button>
+                <button class="icon-btn" id="occClose" aria-label="Fechar" type="button"><i
+                        class="ph ph-x"></i></button>
             </div>
 
             <form id="occForm" class="form">
@@ -227,12 +229,13 @@
                 </div>
 
                 <div class="field">
-                    <label>Foto (opcional)</label>
-                    <input id="occPhoto" type="file" accept="image/*" />
-                    <p class="hint">JPG/PNG/WebP. Recomendado até 5MB.</p>
-                    <img id="occPhotoPreview" class="photo-preview hidden" alt="Pré-visualização da foto" />
+                    <label>Severidade</label>
+                    <select id="occSeverity" required>
+                        <option value="high">Alta</option>
+                        <option value="medium" selected>Média</option>
+                        <option value="low">Baixa</option>
+                    </select>
                 </div>
-
 
                 <div class="field">
                     <label>Foto (opcional)</label>

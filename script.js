@@ -1,8 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // ====== CONFIG (preencher) ======
+    // ====== CONFIG ======
     const SUPABASE_URL = "https://nqkekpwjzjdjtufwdbls.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
-    const MAPBOX_TOKEN = "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
+    const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
+    const MAPBOX_TOKEN =
+        "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
 
     // ====== DEMO POINTS (fallback) ======
     const DEMO_POTHOLES = [
@@ -15,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
             lat: 41.23465,
             lng: -8.61955,
             address: "Rua do Mosteiro, Maia",
-            area: "Maia"
+            area: "Maia",
         },
         {
             id: "demo-2",
@@ -26,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
             lat: 41.23662,
             lng: -8.61412,
             address: "Avenida Visconde Barreiros, Maia",
-            area: "Maia"
+            area: "Maia",
         },
         {
             id: "demo-3",
@@ -37,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
             lat: 41.24005,
             lng: -8.61395,
             address: "Rua Central de Vermoim",
-            area: "Vermoim"
+            area: "Vermoim",
         },
     ];
 
@@ -65,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ====== DOM ======
     const yearEl = document.getElementById("year");
-    yearEl.textContent = new Date().getFullYear();
+    if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
     // Mobile Menu Toggle
     const menuBtn = document.querySelector(".mobile-menu-btn");
@@ -100,70 +102,80 @@ document.addEventListener("DOMContentLoaded", () => {
     let authMode = "login";
 
     function openAuthModal() {
-        authError.classList.add("hidden");
-        authError.textContent = "";
+        if (!authModal) return;
+        if (authError) {
+            authError.classList.add("hidden");
+            authError.textContent = "";
+        }
         authModal.classList.remove("hidden");
     }
 
     function closeAuthModal() {
+        if (!authModal) return;
         authModal.classList.add("hidden");
     }
 
     function setAuthMode(mode) {
         authMode = mode;
-        tabLogin.classList.toggle("active", mode === "login");
-        tabSignup.classList.toggle("active", mode === "signup");
-        authSubmit.textContent = mode === "login" ? "Entrar" : "Criar conta";
+        if (tabLogin) tabLogin.classList.toggle("active", mode === "login");
+        if (tabSignup) tabSignup.classList.toggle("active", mode === "signup");
+        if (authSubmit) authSubmit.textContent = mode === "login" ? "Entrar" : "Criar conta";
     }
 
     [authBackdrop, authClose].forEach((el) => {
         if (el) el.addEventListener("click", closeAuthModal);
     });
 
-    tabLogin.addEventListener("click", () => setAuthMode("login"));
-    tabSignup.addEventListener("click", () => setAuthMode("signup"));
-
-    btnLogin.addEventListener("click", openAuthModal);
+    if (tabLogin) tabLogin.addEventListener("click", () => setAuthMode("login"));
+    if (tabSignup) tabSignup.addEventListener("click", () => setAuthMode("signup"));
 
     // ====== SUPABASE ======
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Auth submit
-    authForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+    if (authForm) {
+        authForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-        authError.classList.add("hidden");
-        authError.textContent = "";
-        authSubmit.disabled = true;
+            if (authError) {
+                authError.classList.add("hidden");
+                authError.textContent = "";
+            }
+            if (authSubmit) authSubmit.disabled = true;
 
-        const originalBtnText = authSubmit.textContent;
-        authSubmit.textContent = "A entrar...";
+            const originalBtnText = authSubmit ? authSubmit.textContent : "Entrar";
+            if (authSubmit) authSubmit.textContent = "A entrar...";
 
-        const email = authEmail.value.trim();
-        const password = authPassword.value;
+            const email = (authEmail?.value || "").trim();
+            const password = authPassword?.value || "";
 
-        try {
-            if (authMode === "signup") {
-                const { error } = await supabase.auth.signUp({ email, password });
+            try {
+                if (authMode === "signup") {
+                    const { error } = await supabase.auth.signUp({ email, password });
+                    if (error) throw error;
+
+                    closeAuthModal();
+                    alert("Conta criada. Se a confirmação por email estiver ativa, confirma o email e depois faz login.");
+                    return;
+                }
+
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
 
                 closeAuthModal();
-                alert("Conta criada. Se a confirmação por email estiver ativa, confirma o email e depois faz login.");
-                return;
+            } catch (err) {
+                if (authError) {
+                    authError.textContent = err?.message || "Erro ao autenticar.";
+                    authError.classList.remove("hidden");
+                }
+            } finally {
+                if (authSubmit) {
+                    authSubmit.disabled = false;
+                    authSubmit.textContent = originalBtnText;
+                }
             }
-
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-
-            closeAuthModal();
-        } catch (err) {
-            authError.textContent = err?.message || "Erro ao autenticar.";
-            authError.classList.remove("hidden");
-        } finally {
-            authSubmit.disabled = false;
-            authSubmit.textContent = originalBtnText;
-        }
-    });
+        });
+    }
 
     // ====== MAP ======
     mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -195,41 +207,44 @@ document.addEventListener("DOMContentLoaded", () => {
             .addTo(map);
 
         marker.getElement().addEventListener("click", () => {
+            if (!mapCardBody) return;
+
             const title = escapeHtml(row.title);
             const desc = escapeHtml(row.description);
             const sev = severityLabel(row.severity);
             const status = escapeHtml(row.status || "open");
 
-            const addr = row.address ? `<div class="muted" style="margin-top:6px;">${escapeHtml(row.address)}</div>` : "";
+            const addr = row.address
+                ? `<div class="muted" style="margin-top:6px;">${escapeHtml(row.address)}</div>`
+                : "";
             const area = row.area ? `<div class="muted">${escapeHtml(row.area)}</div>` : "";
 
             mapCardBody.innerHTML = `
-                <div style="font-weight:900">${title}</div>
-                <div style="margin-top:6px; font-weight:800; color: var(--text-muted)">${sev} • ${status}</div>
-                <div style="margin-top:10px; color: var(--text-muted); font-weight:700">${desc}</div>
-                ${addr}
-                ${area}
-            `;
+        <div style="font-weight:900">${title}</div>
+        <div style="margin-top:6px; font-weight:800; color: var(--text-muted)">${sev} • ${status}</div>
+        <div style="margin-top:10px; color: var(--text-muted); font-weight:700">${desc}</div>
+        ${addr}
+        ${area}
+      `;
         });
 
         markers.set(row.id, marker);
     }
 
     function showDemoIfNeeded(note) {
-        // clear existing
         markers.forEach((m) => m.remove());
         markers.clear();
 
         DEMO_POTHOLES.forEach(renderPotholeMarker);
 
-        if (note) {
-            console.info(note);
-        }
+        if (note) console.info(note);
     }
 
     async function loadPotholes() {
-        // Try to load real data (if RLS allows select)
-        const { data, error } = await supabase.from("potholes").select("*").order("created_at", { ascending: false });
+        const { data, error } = await supabase
+            .from("potholes")
+            .select("*")
+            .order("created_at", { ascending: false });
 
         if (error) {
             console.warn("Erro ao carregar potholes:", error.message);
@@ -242,11 +257,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // clear existing
         markers.forEach((m) => m.remove());
         markers.clear();
 
-        (data || []).forEach(renderPotholeMarker);
+        data.forEach(renderPotholeMarker);
     }
 
     // ====== OCCURRENCE MODAL ======
@@ -269,15 +283,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnUseMyLocation = document.getElementById("btnUseMyLocation");
 
     function openOccModal() {
-        occError.classList.add("hidden");
-        occError.textContent = "";
+        if (!occModal) return;
+
+        if (occError) {
+            occError.classList.add("hidden");
+            occError.textContent = "";
+        }
 
         // reset
-        occForm.reset();
-        occAddress.value = "";
-        occArea.value = "";
-        occLat.value = "";
-        occLng.value = "";
+        if (occForm) occForm.reset();
+        if (occAddress) occAddress.value = "";
+        if (occArea) occArea.value = "";
+        if (occLat) occLat.value = "";
+        if (occLng) occLng.value = "";
+
         if (occPhotoPreview) {
             occPhotoPreview.src = "";
             occPhotoPreview.classList.add("hidden");
@@ -290,18 +309,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         pickMode = true; // por defeito, já pode clicar no mapa
         occModal.classList.remove("hidden");
-        mapCardBody.textContent = "Modo seleção: clica no mapa para escolher a posição.";
+        if (mapCardBody) mapCardBody.textContent = "Modo seleção: clica no mapa para escolher a posição.";
     }
 
     function closeOccModal() {
         pickMode = false;
-        occModal.classList.add("hidden");
-        mapCardBody.textContent = "Clica num ponto para ver detalhes.";
+        if (occModal) occModal.classList.add("hidden");
+        if (mapCardBody) mapCardBody.textContent = "Clica num ponto para ver detalhes.";
     }
 
     // Photo preview (optional)
     if (occPhoto && occPhotoPreview) {
         occPhoto.addEventListener("change", () => {
+            if (!occError) return;
+
             const file = occPhoto.files && occPhoto.files[0] ? occPhoto.files[0] : null;
             if (!file) {
                 occPhotoPreview.src = "";
@@ -327,6 +348,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            occError.classList.add("hidden");
+            occError.textContent = "";
+
             const url = URL.createObjectURL(file);
             occPhotoPreview.src = url;
             occPhotoPreview.classList.remove("hidden");
@@ -342,57 +366,59 @@ document.addEventListener("DOMContentLoaded", () => {
         if (el) el.addEventListener("click", closeOccModal);
     });
 
-    btnPickOnMap.addEventListener("click", () => {
-        pickMode = true;
-        mapCardBody.textContent = "Modo seleção: clica no mapa para escolher a posição.";
-    });
+    if (btnPickOnMap) {
+        btnPickOnMap.addEventListener("click", () => {
+            pickMode = true;
+            if (mapCardBody) mapCardBody.textContent = "Modo seleção: clica no mapa para escolher a posição.";
+        });
+    }
 
-    btnUseMyLocation.addEventListener("click", async () => {
-        occError.classList.add("hidden");
-        occError.textContent = "";
+    if (btnUseMyLocation) {
+        btnUseMyLocation.addEventListener("click", async () => {
+            if (!occError) return;
 
-        if (!navigator.geolocation) {
-            occError.textContent = "O teu browser não suporta geolocalização.";
-            occError.classList.remove("hidden");
-            return;
-        }
+            occError.classList.add("hidden");
+            occError.textContent = "";
 
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-
-                setPickPoint(lng, lat, true);
-            },
-            () => {
-                occError.textContent = "Não foi possível obter a tua localização. Verifica permissões do browser.";
+            if (!navigator.geolocation) {
+                occError.textContent = "O teu browser não suporta geolocalização.";
                 occError.classList.remove("hidden");
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    });
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    setPickPoint(lng, lat, true);
+                },
+                () => {
+                    occError.textContent = "Não foi possível obter a tua localização. Verifica permissões do browser.";
+                    occError.classList.remove("hidden");
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        });
+    }
 
     // Click on map to pick point (only when pickMode is true)
     map.on("click", async (e) => {
         if (!pickMode) return;
-
         const { lng, lat } = e.lngLat;
         setPickPoint(lng, lat, true);
     });
 
     async function reverseGeocode(lng, lat) {
-        // Mapbox reverse geocoding
         const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=pt&limit=1`;
         const res = await fetch(url);
         if (!res.ok) return { address: "", area: "" };
 
         const json = await res.json();
-        const feature = (json.features && json.features[0]) ? json.features[0] : null;
+        const feature = json.features && json.features[0] ? json.features[0] : null;
         if (!feature) return { address: "", area: "" };
 
         const address = feature.place_name || "";
 
-        // crude area extraction
         const ctx = feature.context || [];
         const locality = ctx.find((c) => (c.id || "").startsWith("place"))?.text;
         const neighborhood = ctx.find((c) => (c.id || "").startsWith("neighborhood"))?.text;
@@ -403,151 +429,155 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function setPickPoint(lng, lat, fly) {
-        occLat.value = String(lat);
-        occLng.value = String(lng);
+        if (occLat) occLat.value = String(lat);
+        if (occLng) occLng.value = String(lng);
 
         if (pickMarker) {
             pickMarker.remove();
             pickMarker = null;
         }
 
-        pickMarker = new mapboxgl.Marker({ color: "#0f172a" })
-            .setLngLat([lng, lat])
-            .addTo(map);
+        pickMarker = new mapboxgl.Marker({ color: "#0f172a" }).setLngLat([lng, lat]).addTo(map);
 
-        if (fly) {
-            map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14) });
-        }
+        if (fly) map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14) });
 
-        // Fill address + area
         try {
             const { address, area } = await reverseGeocode(lng, lat);
-            occAddress.value = address;
-            occArea.value = area;
+            if (occAddress) occAddress.value = address;
+            if (occArea) occArea.value = area;
         } catch (err) {
             console.warn("reverse geocode failed:", err);
         }
 
-        mapCardBody.textContent = "Posição selecionada. Preenche o formulário e guarda a ocorrência.";
+        if (mapCardBody) mapCardBody.textContent = "Posição selecionada. Preenche o formulário e guarda a ocorrência.";
     }
 
     // ====== Create pothole (requires auth + RLS) ======
-    occForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        occError.classList.add("hidden");
-        occError.textContent = "";
-
-        const title = occTitleInput.value.trim();
-        const description = occDescInput.value.trim();
-        const severity = occSeverity.value;
-
-        const lat = parseFloat(occLat.value);
-        const lng = parseFloat(occLng.value);
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-            occError.textContent = "Escolhe uma posição no mapa (ou usa a tua localização) antes de guardar.";
-            occError.classList.remove("hidden");
-            return;
-        }
-
-        const {
-            data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-            occError.textContent = "Tens de fazer login para criar uma ocorrência.";
-            occError.classList.remove("hidden");
-            return;
-        }
-
-        const payload = {
-            title,
-            description,
-            severity,
-            status: "open",
-            lat,
-            lng,
-            address: (occAddress.value || null),
-            area: (occArea.value || null),
-            user_id: user.id,
-        };
-
-        // 1) Create the pothole and get its ID back (needed for photo path)
-        const { data: created, error: createErr } = await supabase
-            .from("potholes")
-            .insert(payload)
-            .select("id")
-            .single();
-
-        if (createErr) {
-            occError.textContent = createErr.message || "Erro ao gravar ocorrência.";
-            occError.classList.remove("hidden");
-            return;
-        }
-
-        // 2) Optional photo upload + DB record (pothole_photos)
-        const file = occPhoto && occPhoto.files && occPhoto.files[0] ? occPhoto.files[0] : null;
-        if (file) {
-            try {
-                // Basic validation (also validated on change)
-                if (!file.type || !file.type.startsWith("image/")) {
-                    throw new Error("Formato de ficheiro inválido. Escolhe uma imagem (JPG/PNG/WebP).");
-                }
-                if (file.size > 5 * 1024 * 1024) {
-                    throw new Error("A imagem é demasiado grande. Usa uma foto até 5MB.");
-                }
-
-                const ext = (file.name && file.name.includes(".")) ? file.name.split(".").pop() : "jpg";
-                const safeExt = (ext || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-                const rand = Math.random().toString(16).slice(2);
-                const fileName = `${Date.now()}-${rand}.${safeExt}`;
-                const path = `potholes/${created.id}/${fileName}`;
-
-                const { error: uploadErr } = await supabase.storage
-                    .from("pothole-photos")
-                    .upload(path, file, { contentType: file.type, upsert: false });
-
-                if (uploadErr) throw uploadErr;
-
-                const { error: photoErr } = await supabase
-                    .from("pothole_photos")
-                    .insert({ pothole_id: created.id, path });
-
-                if (photoErr) throw photoErr;
-            } catch (photoError) {
-                console.warn("Ocorrência criada, mas falhou o upload da foto:", photoError);
-                alert("Ocorrência criada, mas não foi possível anexar a foto. Podes tentar novamente mais tarde.");
+    if (occForm) {
+        occForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (occError) {
+                occError.classList.add("hidden");
+                occError.textContent = "";
             }
-        }
 
-        closeOccModal();
-        await loadPotholes();
-    });
+            const title = (occTitleInput?.value || "").trim();
+            const description = (occDescInput?.value || "").trim();
+            const severity = occSeverity?.value || "medium";
+
+            const lat = parseFloat(occLat?.value || "");
+            const lng = parseFloat(occLng?.value || "");
+
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                if (occError) {
+                    occError.textContent = "Escolhe uma posição no mapa (ou usa a tua localização) antes de guardar.";
+                    occError.classList.remove("hidden");
+                }
+                return;
+            }
+
+            const { data: userData } = await supabase.auth.getUser();
+            const user = userData?.user;
+
+            if (!user) {
+                if (occError) {
+                    occError.textContent = "Tens de fazer login para criar uma ocorrência.";
+                    occError.classList.remove("hidden");
+                }
+                return;
+            }
+
+            const payload = {
+                title,
+                description,
+                severity,
+                status: "open",
+                lat,
+                lng,
+                address: occAddress?.value || null,
+                area: occArea?.value || null,
+                user_id: user.id,
+            };
+
+            // 1) Create the pothole
+            const { data: created, error: createErr } = await supabase
+                .from("potholes")
+                .insert(payload)
+                .select("id")
+                .single();
+
+            if (createErr || !created?.id) {
+                if (occError) {
+                    occError.textContent = createErr?.message || "Erro ao gravar ocorrência.";
+                    occError.classList.remove("hidden");
+                }
+                return;
+            }
+
+            // 2) Optional photo upload + DB record (pothole_photos)
+            const file = occPhoto && occPhoto.files && occPhoto.files[0] ? occPhoto.files[0] : null;
+            if (file) {
+                try {
+                    if (!file.type || !file.type.startsWith("image/")) {
+                        throw new Error("Formato de ficheiro inválido. Escolhe uma imagem (JPG/PNG/WebP).");
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                        throw new Error("A imagem é demasiado grande. Usa uma foto até 5MB.");
+                    }
+
+                    const ext = file.name && file.name.includes(".") ? file.name.split(".").pop() : "jpg";
+                    const safeExt = (ext || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+                    const rand = Math.random().toString(16).slice(2);
+                    const fileName = `${Date.now()}-${rand}.${safeExt}`;
+                    const path = `potholes/${created.id}/${fileName}`;
+
+                    const { error: uploadErr } = await supabase.storage
+                        .from("pothole-photos")
+                        .upload(path, file, { contentType: file.type, upsert: false });
+
+                    if (uploadErr) throw uploadErr;
+
+                    const { error: photoErr } = await supabase.from("pothole_photos").insert({
+                        pothole_id: created.id,
+                        path,
+                    });
+
+                    if (photoErr) throw photoErr;
+                } catch (photoError) {
+                    console.warn("Ocorrência criada, mas falhou o upload da foto:", photoError);
+                    alert("Ocorrência criada, mas não foi possível anexar a foto. Podes tentar novamente mais tarde.");
+                }
+            }
+
+            closeOccModal();
+            await loadPotholes();
+        });
+    }
 
     // ====== Auth state -> UI ======
     async function refreshAuthUI() {
-        const {
-            data: { user },
-        } = await supabase.auth.getUser();
-
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData?.user;
         const isLoggedIn = Boolean(user);
 
-        // Show/hide UI
-        btnNewOccurrence.classList.toggle("hidden", !isLoggedIn);
-        btnNewOccurrenceMobile.classList.toggle("hidden", !isLoggedIn);
+        if (btnNewOccurrence) btnNewOccurrence.classList.toggle("hidden", !isLoggedIn);
+        if (btnNewOccurrenceMobile) btnNewOccurrenceMobile.classList.toggle("hidden", !isLoggedIn);
 
-        userBadge.classList.toggle("hidden", !isLoggedIn);
-        userBadge.textContent = isLoggedIn ? user.email : "";
+        if (userBadge) {
+            userBadge.classList.toggle("hidden", !isLoggedIn);
+            userBadge.textContent = isLoggedIn ? (user.email || "") : "";
+        }
 
-        btnLogin.textContent = isLoggedIn ? "Sair" : "Entrar";
-
-        if (isLoggedIn) {
+        if (btnLogin) {
+            btnLogin.textContent = isLoggedIn ? "Sair" : "Entrar";
             btnLogin.onclick = async () => {
-                await supabase.auth.signOut();
-                await refreshAuthUI();
+                if (isLoggedIn) {
+                    await supabase.auth.signOut();
+                    await refreshAuthUI();
+                } else {
+                    openAuthModal();
+                }
             };
-        } else {
-            btnLogin.onclick = openAuthModal;
         }
     }
 
