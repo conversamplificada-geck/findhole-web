@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ====== CONFIG ======
     const SUPABASE_URL = "https://nqkekpwjzjdjtufwdbls.supabase.co";
     const SUPABASE_ANON_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsImJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
     const MAPBOX_TOKEN =
         "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
 
