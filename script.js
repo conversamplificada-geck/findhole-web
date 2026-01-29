@@ -1,12 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // ====== CONFIG ======
     const SUPABASE_URL = "https://nqkekpwjzjdjtufwdbls.supabase.co";
     const SUPABASE_ANON_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
     const MAPBOX_TOKEN =
         "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
 
-    // ====== DEMO POINTS (fallback) ======
     const DEMO_POTHOLES = [
         {
             id: "demo-1",
@@ -18,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
             lng: -8.61955,
             address: "Rua do Mosteiro, Maia",
             area: "Maia",
+            created_at: new Date().toISOString(),
         },
         {
             id: "demo-2",
@@ -29,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
             lng: -8.61412,
             address: "Avenida Visconde Barreiros, Maia",
             area: "Maia",
+            created_at: new Date(Date.now() - 3600 * 1000).toISOString(),
         },
         {
             id: "demo-3",
@@ -40,10 +40,10 @@ document.addEventListener("DOMContentLoaded", () => {
             lng: -8.61395,
             address: "Rua Central de Vermoim",
             area: "Vermoim",
+            created_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
         },
     ];
 
-    // ====== Helpers ======
     function severityLabel(sev) {
         if (sev === "high") return "Alta";
         if (sev === "medium") return "Média";
@@ -65,11 +65,22 @@ document.addEventListener("DOMContentLoaded", () => {
             .replaceAll("'", "&#039;");
     }
 
-    // ====== DOM ======
+    function issueOrderValue(sev) {
+        if (sev === "high") return 3;
+        if (sev === "medium") return 2;
+        return 1;
+    }
+
+    function formatDate(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return "";
+        return d.toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" });
+    }
+
     const yearEl = document.getElementById("year");
     if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
-    // Mobile Menu Toggle
     const menuBtn = document.querySelector(".mobile-menu-btn");
     const mobileMenu = document.querySelector(".mobile-menu");
     if (menuBtn && mobileMenu) {
@@ -78,16 +89,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Buttons
     const btnLogin = document.getElementById("btnLogin");
     const btnNewOccurrence = document.getElementById("btnNewOccurrence");
     const btnNewOccurrenceMobile = document.getElementById("btnNewOccurrenceMobile");
     const userBadge = document.getElementById("userBadge");
 
-    // Map card
     const mapCardBody = document.getElementById("mapCardBody");
 
-    // ====== AUTH MODAL ======
+    const dashboard = document.getElementById("dashboard");
+    const issueSearch = document.getElementById("issueSearch");
+    const issueSort = document.getElementById("issueSort");
+    const issuesList = document.getElementById("issuesList");
+    const issuesEmpty = document.getElementById("issuesEmpty");
+
+    const sectionsToHideAfterLogin = ["problema", "solucao", "funcionalidades", "beneficios"]
+        .map((id) => document.getElementById(id))
+        .filter(Boolean);
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const authModal = document.getElementById("authModal");
     const authBackdrop = document.getElementById("authBackdrop");
     const authClose = document.getElementById("authClose");
@@ -100,6 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabSignup = document.getElementById("tabSignup");
 
     let authMode = "login";
+    let cachedIssues = [];
 
     function openAuthModal() {
         if (!authModal) return;
@@ -129,10 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tabLogin) tabLogin.addEventListener("click", () => setAuthMode("login"));
     if (tabSignup) tabSignup.addEventListener("click", () => setAuthMode("signup"));
 
-    // ====== SUPABASE ======
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Auth submit
     if (authForm) {
         authForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -144,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (authSubmit) authSubmit.disabled = true;
 
             const originalBtnText = authSubmit ? authSubmit.textContent : "Entrar";
-            if (authSubmit) authSubmit.textContent = "A entrar...";
+            if (authSubmit) authSubmit.textContent = "A processar...";
 
             const email = (authEmail?.value || "").trim();
             const password = authPassword?.value || "";
@@ -153,7 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (authMode === "signup") {
                     const { error } = await supabase.auth.signUp({ email, password });
                     if (error) throw error;
-
                     closeAuthModal();
                     alert("Conta criada. Se a confirmação por email estiver ativa, confirma o email e depois faz login.");
                     return;
@@ -177,7 +193,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ====== MAP ======
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
     const map = new mapboxgl.Map({
@@ -189,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-    const markers = new Map(); // id -> marker
+    const markers = new Map();
     let pickMode = false;
     let pickMarker = null;
 
@@ -202,9 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
         dot.style.border = "2px solid #fff";
         dot.style.boxShadow = "0 8px 18px rgba(0,0,0,0.2)";
 
-        const marker = new mapboxgl.Marker({ element: dot })
-            .setLngLat([row.lng, row.lat])
-            .addTo(map);
+        const marker = new mapboxgl.Marker({ element: dot }).setLngLat([row.lng, row.lat]).addTo(map);
 
         marker.getElement().addEventListener("click", () => {
             if (!mapCardBody) return;
@@ -231,13 +244,10 @@ document.addEventListener("DOMContentLoaded", () => {
         markers.set(row.id, marker);
     }
 
-    function showDemoIfNeeded(note) {
+    function showDemoIfNeeded() {
         markers.forEach((m) => m.remove());
         markers.clear();
-
         DEMO_POTHOLES.forEach(renderPotholeMarker);
-
-        if (note) console.info(note);
     }
 
     async function loadPotholes() {
@@ -246,24 +256,136 @@ document.addEventListener("DOMContentLoaded", () => {
             .select("*")
             .order("created_at", { ascending: false });
 
-        if (error) {
-            console.warn("Erro ao carregar potholes:", error.message);
-            showDemoIfNeeded("Sem dados reais (erro ao carregar). A mostrar pontos de demonstração.");
-            return;
-        }
-
-        if (!data || data.length === 0) {
-            showDemoIfNeeded("Sem ocorrências registadas ainda. A mostrar pontos de demonstração.");
+        if (error || !data || data.length === 0) {
+            showDemoIfNeeded();
             return;
         }
 
         markers.forEach((m) => m.remove());
         markers.clear();
-
         data.forEach(renderPotholeMarker);
     }
 
-    // ====== OCCURRENCE MODAL ======
+    function renderIssuesList(items) {
+        if (!issuesList || !issuesEmpty) return;
+
+        issuesList.innerHTML = "";
+
+        if (!items || items.length === 0) {
+            issuesEmpty.textContent = "Sem ocorrências abertas.";
+            issuesEmpty.classList.remove("hidden");
+            return;
+        }
+
+        issuesEmpty.classList.add("hidden");
+
+        for (const row of items) {
+            const el = document.createElement("div");
+            el.className = "issue-item";
+            el.innerHTML = `
+        <div class="issue-top">
+          <div class="issue-title">${escapeHtml(row.title)}</div>
+          <span class="badge">${severityLabel(row.severity)}</span>
+        </div>
+        <div class="issue-meta">
+          ${escapeHtml(row.area || "—")} • ${escapeHtml(row.address || "—")} • ${formatDate(row.created_at)}
+        </div>
+        <div class="issue-desc">${escapeHtml(row.description || "")}</div>
+      `;
+
+            el.addEventListener("click", () => {
+                map.flyTo({ center: [row.lng, row.lat], zoom: 16 });
+                if (mapCardBody) {
+                    mapCardBody.innerHTML = `
+            <div style="font-weight:900">${escapeHtml(row.title)}</div>
+            <div style="margin-top:6px; font-weight:800; color: var(--text-muted)">${severityLabel(row.severity)} • ${escapeHtml(row.status || "open")}</div>
+            <div style="margin-top:10px; color: var(--text-muted); font-weight:700">${escapeHtml(row.description || "")}</div>
+            ${row.address ? `<div class="muted" style="margin-top:6px;">${escapeHtml(row.address)}</div>` : ""}
+            ${row.area ? `<div class="muted">${escapeHtml(row.area)}</div>` : ""}
+          `;
+                }
+            });
+
+            issuesList.appendChild(el);
+        }
+    }
+
+    function applyIssueFiltersAndRender() {
+        let items = [...cachedIssues];
+
+        const q = (issueSearch?.value || "").trim().toLowerCase();
+        if (q) {
+            items = items.filter(
+                (x) =>
+                    (x.title || "").toLowerCase().includes(q) ||
+                    (x.description || "").toLowerCase().includes(q) ||
+                    (x.area || "").toLowerCase().includes(q) ||
+                    (x.address || "").toLowerCase().includes(q)
+            );
+        }
+
+        const sort = issueSort?.value || "newest";
+        if (sort === "severity") {
+            items.sort((a, b) => issueOrderValue(b.severity) - issueOrderValue(a.severity));
+        } else {
+            items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        }
+
+        renderIssuesList(items);
+    }
+
+    async function loadOpenIssuesForDashboard() {
+        if (issuesEmpty) {
+            issuesEmpty.textContent = "A carregar ocorrências…";
+            issuesEmpty.classList.remove("hidden");
+        }
+        if (issuesList) issuesList.innerHTML = "";
+
+        const { data, error } = await supabase
+            .from("potholes")
+            .select("*")
+            .eq("status", "open")
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            cachedIssues = [];
+            if (issuesEmpty) {
+                issuesEmpty.textContent = "Erro ao carregar ocorrências abertas.";
+                issuesEmpty.classList.remove("hidden");
+            }
+            return;
+        }
+
+        cachedIssues = data || [];
+        applyIssueFiltersAndRender();
+    }
+
+    if (issueSearch) issueSearch.addEventListener("input", applyIssueFiltersAndRender);
+    if (issueSort) issueSort.addEventListener("change", applyIssueFiltersAndRender);
+
+    function scrollToDashboard() {
+        if (!dashboard) return;
+        dashboard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function ensureGoDashboardButton() {
+        const existing = document.getElementById("btnGoDashboard");
+        if (existing) return existing;
+
+        const headerCta = document.querySelector(".header-cta");
+        if (!headerCta) return null;
+
+        const btn = document.createElement("button");
+        btn.id = "btnGoDashboard";
+        btn.type = "button";
+        btn.className = "btn btn-outline";
+        btn.innerHTML = '<i class="ph ph-list-checks"></i> Painel';
+        btn.addEventListener("click", scrollToDashboard);
+
+        headerCta.insertBefore(btn, headerCta.firstChild);
+        return btn;
+    }
+
     const occModal = document.getElementById("occModal");
     const occBackdrop = document.getElementById("occBackdrop");
     const occClose = document.getElementById("occClose");
@@ -290,7 +412,6 @@ document.addEventListener("DOMContentLoaded", () => {
             occError.textContent = "";
         }
 
-        // reset
         if (occForm) occForm.reset();
         if (occAddress) occAddress.value = "";
         if (occArea) occArea.value = "";
@@ -307,7 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
             pickMarker = null;
         }
 
-        pickMode = true; // por defeito, já pode clicar no mapa
+        pickMode = true;
         occModal.classList.remove("hidden");
         if (mapCardBody) mapCardBody.textContent = "Modo seleção: clica no mapa para escolher a posição.";
     }
@@ -318,11 +439,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (mapCardBody) mapCardBody.textContent = "Clica num ponto para ver detalhes.";
     }
 
-    // Photo preview (optional)
     if (occPhoto && occPhotoPreview) {
         occPhoto.addEventListener("change", () => {
-            if (!occError) return;
-
             const file = occPhoto.files && occPhoto.files[0] ? occPhoto.files[0] : null;
             if (!file) {
                 occPhotoPreview.src = "";
@@ -331,8 +449,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (!file.type || !file.type.startsWith("image/")) {
-                occError.textContent = "Formato de ficheiro inválido. Escolhe uma imagem (JPG/PNG/WebP).";
-                occError.classList.remove("hidden");
+                if (occError) {
+                    occError.textContent = "Formato inválido. Escolhe uma imagem (JPG/PNG/WebP).";
+                    occError.classList.remove("hidden");
+                }
                 occPhoto.value = "";
                 occPhotoPreview.src = "";
                 occPhotoPreview.classList.add("hidden");
@@ -340,16 +460,20 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                occError.textContent = "A imagem é demasiado grande. Usa uma foto até 5MB.";
-                occError.classList.remove("hidden");
+                if (occError) {
+                    occError.textContent = "Imagem muito grande. Usa até 5MB.";
+                    occError.classList.remove("hidden");
+                }
                 occPhoto.value = "";
                 occPhotoPreview.src = "";
                 occPhotoPreview.classList.add("hidden");
                 return;
             }
 
-            occError.classList.add("hidden");
-            occError.textContent = "";
+            if (occError) {
+                occError.classList.add("hidden");
+                occError.textContent = "";
+            }
 
             const url = URL.createObjectURL(file);
             occPhotoPreview.src = url;
@@ -375,14 +499,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (btnUseMyLocation) {
         btnUseMyLocation.addEventListener("click", async () => {
-            if (!occError) return;
-
-            occError.classList.add("hidden");
-            occError.textContent = "";
+            if (occError) {
+                occError.classList.add("hidden");
+                occError.textContent = "";
+            }
 
             if (!navigator.geolocation) {
-                occError.textContent = "O teu browser não suporta geolocalização.";
-                occError.classList.remove("hidden");
+                if (occError) {
+                    occError.textContent = "O teu browser não suporta geolocalização.";
+                    occError.classList.remove("hidden");
+                }
                 return;
             }
 
@@ -393,15 +519,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     setPickPoint(lng, lat, true);
                 },
                 () => {
-                    occError.textContent = "Não foi possível obter a tua localização. Verifica permissões do browser.";
-                    occError.classList.remove("hidden");
+                    if (occError) {
+                        occError.textContent = "Não foi possível obter a localização. Verifica permissões do browser.";
+                        occError.classList.remove("hidden");
+                    }
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
         });
     }
 
-    // Click on map to pick point (only when pickMode is true)
     map.on("click", async (e) => {
         if (!pickMode) return;
         const { lng, lat } = e.lngLat;
@@ -446,16 +573,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (occAddress) occAddress.value = address;
             if (occArea) occArea.value = area;
         } catch (err) {
-            console.warn("reverse geocode failed:", err);
+            // ignore
         }
 
         if (mapCardBody) mapCardBody.textContent = "Posição selecionada. Preenche o formulário e guarda a ocorrência.";
     }
 
-    // ====== Create pothole (requires auth + RLS) ======
     if (occForm) {
         occForm.addEventListener("submit", async (e) => {
             e.preventDefault();
+
             if (occError) {
                 occError.classList.add("hidden");
                 occError.textContent = "";
@@ -499,7 +626,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 user_id: user.id,
             };
 
-            // 1) Create the pothole
             const { data: created, error: createErr } = await supabase
                 .from("potholes")
                 .insert(payload)
@@ -514,17 +640,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // 2) Optional photo upload + DB record (pothole_photos)
             const file = occPhoto && occPhoto.files && occPhoto.files[0] ? occPhoto.files[0] : null;
             if (file) {
                 try {
-                    if (!file.type || !file.type.startsWith("image/")) {
-                        throw new Error("Formato de ficheiro inválido. Escolhe uma imagem (JPG/PNG/WebP).");
-                    }
-                    if (file.size > 5 * 1024 * 1024) {
-                        throw new Error("A imagem é demasiado grande. Usa uma foto até 5MB.");
-                    }
-
                     const ext = file.name && file.name.includes(".") ? file.name.split(".").pop() : "jpg";
                     const safeExt = (ext || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
                     const rand = Math.random().toString(16).slice(2);
@@ -544,17 +662,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     if (photoErr) throw photoErr;
                 } catch (photoError) {
-                    console.warn("Ocorrência criada, mas falhou o upload da foto:", photoError);
                     alert("Ocorrência criada, mas não foi possível anexar a foto. Podes tentar novamente mais tarde.");
                 }
             }
 
             closeOccModal();
             await loadPotholes();
+            await loadOpenIssuesForDashboard();
+            scrollToDashboard();
         });
     }
 
-    // ====== Auth state -> UI ======
     async function refreshAuthUI() {
         const { data: userData } = await supabase.auth.getUser();
         const user = userData?.user;
@@ -565,8 +683,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (userBadge) {
             userBadge.classList.toggle("hidden", !isLoggedIn);
-            userBadge.textContent = isLoggedIn ? (user.email || "") : "";
+            userBadge.textContent = isLoggedIn ? user.email || "" : "";
         }
+
+        const goDashBtn = ensureGoDashboardButton();
+        if (goDashBtn) goDashBtn.classList.toggle("hidden", !isLoggedIn);
 
         if (btnLogin) {
             btnLogin.textContent = isLoggedIn ? "Sair" : "Entrar";
@@ -579,13 +700,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             };
         }
+
+        if (dashboard) dashboard.classList.toggle("hidden", !isLoggedIn);
+        sectionsToHideAfterLogin.forEach((sec) => sec.classList.toggle("hidden", isLoggedIn));
+
+        if (isLoggedIn) {
+            await loadOpenIssuesForDashboard();
+            scrollToDashboard();
+        } else {
+            cachedIssues = [];
+            if (issuesList) issuesList.innerHTML = "";
+            if (issuesEmpty) {
+                issuesEmpty.textContent = "Faz login para ver ocorrências abertas.";
+                issuesEmpty.classList.remove("hidden");
+            }
+        }
     }
 
     supabase.auth.onAuthStateChange(async () => {
         await refreshAuthUI();
     });
 
-    // ====== Init ======
     (async () => {
         await refreshAuthUI();
         await loadPotholes();

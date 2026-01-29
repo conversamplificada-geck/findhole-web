@@ -520,3 +520,123 @@ a {
     border: 1px solid var(--border);
     margin-top: 10px;
 }
+
+/* Dashboard */
+.dash-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.dash-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-width: 320px;
+    justify-content: flex-end;
+}
+
+.input {
+    padding: 12px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(246, 248, 252, 0.6);
+    font-weight: 800;
+    outline: none;
+}
+
+.dash-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 16px;
+    align-items: start;
+}
+
+.dash-list {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+}
+
+.issues {
+    display: grid;
+    gap: 10px;
+}
+
+.issue-item {
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 16px;
+    padding: 12px;
+    cursor: pointer;
+}
+
+.issue-item:hover {
+    transform: translateY(-1px);
+}
+
+.issue-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 12px;
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--text-muted);
+}
+
+.issue-title {
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+.issue-meta {
+    color: var(--text-muted);
+    font-weight: 800;
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+.issue-desc {
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-top: 8px;
+}
+
+.dash-map {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 14px;
+}
+
+@media (max-width: 920px) {
+    .dash-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .dash-controls {
+        justify-content: flex-start;
+        min-width: auto;
+        width: 100%;
+    }
+
+    .dash-grid {
+        grid-template-columns: 1fr;
+    }
+}

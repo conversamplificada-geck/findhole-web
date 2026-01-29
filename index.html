@@ -41,7 +41,13 @@
             </nav>
 
             <div class="header-cta">
+                <button id="btnGoDashboard" class="btn btn-outline hidden" type="button">
+                    <i class="ph ph-list-bullets"></i>
+                    Painel
+                </button>
+
                 <button id="btnLogin" class="btn btn-accent" type="button">Entrar</button>
+
                 <button class="mobile-menu-btn" aria-label="Abrir menu" type="button">
                     <i class="ph ph-list"></i>
                 </button>
@@ -122,11 +128,63 @@
             </div>
         </section>
 
+        <!-- DASHBOARD (visível só após login) -->
+        <section id="dashboard" class="section hidden">
+            <div class="container">
+                <div class="dash-header">
+                    <h2>Ocorrências Abertas</h2>
+
+                    <div class="dash-controls">
+                        <input id="issueSearch" class="input" type="text"
+                            placeholder="Pesquisar por título / descrição / zona…" />
+                        <select id="issueSort" class="input">
+                            <option value="newest" selected>Mais recentes</option>
+                            <option value="severity">Maior severidade</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dash-grid">
+                    <div class="dash-list">
+                        <div id="issuesEmpty" class="muted">Faz login para ver ocorrências abertas.</div>
+                        <div id="issuesList" class="issues"></div>
+                    </div>
+
+                    <div class="dash-map">
+                        <div class="muted" style="font-weight:800;margin-bottom:10px;">
+                            Dica: clica num item para focar no mapa.
+                        </div>
+                        <div class="muted">O mapa acima continua ativo.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- PROBLEM -->
         <section id="problema" class="section">
             <div class="container">
                 <h2>O Problema</h2>
-                <p class="muted">...</p>
+                <p class="muted">
+                    Buracos e degradações no asfalto causam acidentes, danos em veículos e aumentam custos de
+                    manutenção.
+                    Hoje, o registo é disperso (chamadas, emails, redes sociais), sem padronização de fotos, localização
+                    e prioridade.
+                </p>
+
+                <div class="cards">
+                    <div class="card">
+                        <h3>Registo disperso</h3>
+                        <p>Sem um canal único para recolha e triagem.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Sem prioridade clara</h3>
+                        <p>Ocorrências graves misturam-se com as de baixa urgência.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Pouca transparência</h3>
+                        <p>O cidadão não sabe se foi visto, aceite ou resolvido.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -134,7 +192,26 @@
         <section id="solucao" class="section alt">
             <div class="container">
                 <h2>A Solução</h2>
-                <p class="muted">...</p>
+                <p class="muted">
+                    O FindHole centraliza ocorrências com geolocalização, severidade e histórico.
+                    A equipa vê tudo num painel: mapa + lista, com foco em “abertas” para atacar primeiro o que é mais
+                    crítico.
+                </p>
+
+                <div class="cards">
+                    <div class="card">
+                        <h3>Mapa + Lista</h3>
+                        <p>Visualização imediata dos pontos e detalhes.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Triagem por severidade</h3>
+                        <p>Alta / Média / Baixa, para priorizar com base no risco.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Registo com evidência</h3>
+                        <p>Foto opcional + morada automática (reverse geocoding).</p>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -144,16 +221,16 @@
                 <h2>Funcionalidades</h2>
                 <div class="cards">
                     <div class="card">
-                        <h3>↓ tempo de resposta</h3>
-                        <p>Com triagem por severidade</p>
+                        <h3>Criar ocorrência</h3>
+                        <p>Clica no mapa ou usa GPS. Guarda com título, descrição e severidade.</p>
                     </div>
                     <div class="card">
-                        <h3>+ transparência</h3>
-                        <p>Estado visível para cidadãos</p>
+                        <h3>Ocorrências abertas</h3>
+                        <p>Lista filtrada por status, com ordenação e pesquisa (painel).</p>
                     </div>
                     <div class="card">
-                        <h3>+ eficiência</h3>
-                        <p>Menos chamadas e e-mails</p>
+                        <h3>Transparência</h3>
+                        <p>Estado “open / resolved” e histórico (evolução futura).</p>
                     </div>
                 </div>
             </div>
@@ -163,7 +240,20 @@
         <section id="beneficios" class="section alt">
             <div class="container">
                 <h2>Benefícios</h2>
-                <p class="muted">...</p>
+                <div class="cards">
+                    <div class="card">
+                        <h3>Mais rapidez</h3>
+                        <p>Centraliza tudo e reduz o tempo de triagem.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Menos custos</h3>
+                        <p>Prevenção: arrumar cedo sai mais barato do que remediar tarde.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Melhor experiência</h3>
+                        <p>Cidadão vê o progresso e confia mais no processo.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -255,7 +345,6 @@
                     </div>
                 </div>
 
-                <!-- Hidden lat/lng: guardamos para o mapa, mas não mostramos -->
                 <input id="occLat" type="hidden" />
                 <input id="occLng" type="hidden" />
 
