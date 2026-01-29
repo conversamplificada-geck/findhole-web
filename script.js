@@ -1,10 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // ====== CONFIG ======
     const SUPABASE_URL = "https://nqkekpwjzjdjtufwdbls.supabase.co";
     const SUPABASE_ANON_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsImJlZiI6Im5xa2VrcHdqempkanR1ZndkYmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMTU0NDgsImV4cCI6MjA4NDY5MTQ0OH0.IoZlKpXR4o1sIZRi_DoyFdh3HUQa1VsclmzCLrYMiMA";
     const MAPBOX_TOKEN =
         "pk.eyJ1IjoiZ2Vja29saXZlciIsImEiOiJjbWtwemVuNm0wbmNtM2dzZTcwbHhhMnFtIn0.9aJG3761SyXS-H5GkAtstA";
 
+    // ====== DEMO POINTS (fallback) ======
     const DEMO_POTHOLES = [
         {
             id: "demo-1",
@@ -44,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
     ];
 
+    // ====== Helpers ======
     function severityLabel(sev) {
         if (sev === "high") return "Alta";
         if (sev === "medium") return "Média";
@@ -78,9 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return d.toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" });
     }
 
+    // ====== DOM ======
     const yearEl = document.getElementById("year");
     if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
+    // Mobile menu
     const menuBtn = document.querySelector(".mobile-menu-btn");
     const mobileMenu = document.querySelector(".mobile-menu");
     if (menuBtn && mobileMenu) {
@@ -89,25 +94,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Header buttons
     const btnLogin = document.getElementById("btnLogin");
     const btnNewOccurrence = document.getElementById("btnNewOccurrence");
     const btnNewOccurrenceMobile = document.getElementById("btnNewOccurrenceMobile");
     const userBadge = document.getElementById("userBadge");
 
+    // Map card
     const mapCardBody = document.getElementById("mapCardBody");
 
+    // Dashboard DOM
     const dashboard = document.getElementById("dashboard");
     const issueSearch = document.getElementById("issueSearch");
     const issueSort = document.getElementById("issueSort");
     const issuesList = document.getElementById("issuesList");
     const issuesEmpty = document.getElementById("issuesEmpty");
 
+    // Sections to hide after login
     const sectionsToHideAfterLogin = ["problema", "solucao", "funcionalidades", "beneficios"]
         .map((id) => document.getElementById(id))
         .filter(Boolean);
 
+    let cachedIssues = [];
+
+    // ====== SUPABASE ======
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ====== AUTH MODAL ======
     const authModal = document.getElementById("authModal");
     const authBackdrop = document.getElementById("authBackdrop");
     const authClose = document.getElementById("authClose");
@@ -120,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabSignup = document.getElementById("tabSignup");
 
     let authMode = "login";
-    let cachedIssues = [];
 
     function openAuthModal() {
         if (!authModal) return;
@@ -170,6 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (authMode === "signup") {
                     const { error } = await supabase.auth.signUp({ email, password });
                     if (error) throw error;
+
                     closeAuthModal();
                     alert("Conta criada. Se a confirmação por email estiver ativa, confirma o email e depois faz login.");
                     return;
@@ -193,6 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // ====== MAP ======
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
     const map = new mapboxgl.Map({
@@ -208,6 +222,66 @@ document.addEventListener("DOMContentLoaded", () => {
     let pickMode = false;
     let pickMarker = null;
 
+    // Fix: escolher no mapa com modal por cima
+    let pickForOccurrence = false;
+    let pendingPickedPoint = null; // {lat,lng,address,area}
+
+    async function getLatestPhotoUrl(potholeId) {
+        // Demo não tem foto
+        if (!potholeId || String(potholeId).startsWith("demo-")) return null;
+
+        // Busca o último path na tabela pothole_photos
+        const { data, error } = await supabase
+            .from("pothole_photos")
+            .select("path, created_at")
+            .eq("pothole_id", potholeId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error || !data?.path) return null;
+
+        // Signed URL (funciona mesmo se bucket não for público)
+        const { data: signed, error: signErr } = await supabase.storage
+            .from("pothole-photos")
+            .createSignedUrl(data.path, 60 * 60);
+
+        if (signErr || !signed?.signedUrl) return null;
+        return signed.signedUrl;
+    }
+
+    async function renderSelectedOccurrence(row) {
+        if (!mapCardBody) return;
+
+        mapCardBody.innerHTML = `A carregar detalhes…`;
+
+        const title = escapeHtml(row.title);
+        const desc = escapeHtml(row.description || "");
+        const sev = severityLabel(row.severity);
+        const status = escapeHtml(row.status || "open");
+
+        const addr = row.address ? escapeHtml(row.address) : "—";
+        const area = row.area ? escapeHtml(row.area) : "—";
+
+        const photoUrl = await getLatestPhotoUrl(row.id);
+
+        const photoHtml = photoUrl
+            ? `<div style="margin-top:12px;">
+           <img src="${photoUrl}" alt="Foto da ocorrência"
+             style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;border:1px solid rgba(15,23,42,0.12);" />
+         </div>`
+            : "";
+
+        mapCardBody.innerHTML = `
+      <div style="font-weight:900">${title}</div>
+      <div style="margin-top:6px; font-weight:800; color: var(--text-muted)">${sev} • ${status}</div>
+      <div style="margin-top:10px; color: var(--text-muted); font-weight:700">${desc}</div>
+      <div class="muted" style="margin-top:10px;">${addr}</div>
+      <div class="muted">${area}</div>
+      ${photoHtml}
+    `;
+    }
+
     function renderPotholeMarker(row) {
         const dot = document.createElement("div");
         dot.style.width = "14px";
@@ -219,26 +293,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const marker = new mapboxgl.Marker({ element: dot }).setLngLat([row.lng, row.lat]).addTo(map);
 
-        marker.getElement().addEventListener("click", () => {
-            if (!mapCardBody) return;
-
-            const title = escapeHtml(row.title);
-            const desc = escapeHtml(row.description);
-            const sev = severityLabel(row.severity);
-            const status = escapeHtml(row.status || "open");
-
-            const addr = row.address
-                ? `<div class="muted" style="margin-top:6px;">${escapeHtml(row.address)}</div>`
-                : "";
-            const area = row.area ? `<div class="muted">${escapeHtml(row.area)}</div>` : "";
-
-            mapCardBody.innerHTML = `
-        <div style="font-weight:900">${title}</div>
-        <div style="margin-top:6px; font-weight:800; color: var(--text-muted)">${sev} • ${status}</div>
-        <div style="margin-top:10px; color: var(--text-muted); font-weight:700">${desc}</div>
-        ${addr}
-        ${area}
-      `;
+        marker.getElement().addEventListener("click", async () => {
+            await renderSelectedOccurrence(row);
         });
 
         markers.set(row.id, marker);
@@ -248,6 +304,11 @@ document.addEventListener("DOMContentLoaded", () => {
         markers.forEach((m) => m.remove());
         markers.clear();
         DEMO_POTHOLES.forEach(renderPotholeMarker);
+
+        if (issuesEmpty) {
+            issuesEmpty.textContent = "Sem dados reais. A mostrar demonstração.";
+            issuesEmpty.classList.remove("hidden");
+        }
     }
 
     async function loadPotholes() {
@@ -266,6 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
         data.forEach(renderPotholeMarker);
     }
 
+    // ====== DASHBOARD ======
     function renderIssuesList(items) {
         if (!issuesList || !issuesEmpty) return;
 
@@ -293,17 +355,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="issue-desc">${escapeHtml(row.description || "")}</div>
       `;
 
-            el.addEventListener("click", () => {
+            el.addEventListener("click", async () => {
                 map.flyTo({ center: [row.lng, row.lat], zoom: 16 });
-                if (mapCardBody) {
-                    mapCardBody.innerHTML = `
-            <div style="font-weight:900">${escapeHtml(row.title)}</div>
-            <div style="margin-top:6px; font-weight:800; color: var(--text-muted)">${severityLabel(row.severity)} • ${escapeHtml(row.status || "open")}</div>
-            <div style="margin-top:10px; color: var(--text-muted); font-weight:700">${escapeHtml(row.description || "")}</div>
-            ${row.address ? `<div class="muted" style="margin-top:6px;">${escapeHtml(row.address)}</div>` : ""}
-            ${row.area ? `<div class="muted">${escapeHtml(row.area)}</div>` : ""}
-          `;
-                }
+                await renderSelectedOccurrence(row);
             });
 
             issuesList.appendChild(el);
@@ -386,6 +440,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return btn;
     }
 
+    // ====== OCCURRENCE MODAL ======
     const occModal = document.getElementById("occModal");
     const occBackdrop = document.getElementById("occBackdrop");
     const occClose = document.getElementById("occClose");
@@ -404,7 +459,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnPickOnMap = document.getElementById("btnPickOnMap");
     const btnUseMyLocation = document.getElementById("btnUseMyLocation");
 
-    function openOccModal() {
+    function openOccModal(prefill = null) {
         if (!occModal) return;
 
         if (occError) {
@@ -412,36 +467,61 @@ document.addEventListener("DOMContentLoaded", () => {
             occError.textContent = "";
         }
 
+        // reset
         if (occForm) occForm.reset();
-        if (occAddress) occAddress.value = "";
-        if (occArea) occArea.value = "";
-        if (occLat) occLat.value = "";
-        if (occLng) occLng.value = "";
 
         if (occPhotoPreview) {
             occPhotoPreview.src = "";
             occPhotoPreview.classList.add("hidden");
         }
 
-        if (pickMarker) {
-            pickMarker.remove();
-            pickMarker = null;
+        // prefill
+        if (prefill) {
+            if (occLat) occLat.value = String(prefill.lat);
+            if (occLng) occLng.value = String(prefill.lng);
+            if (occAddress) occAddress.value = prefill.address || "";
+            if (occArea) occArea.value = prefill.area || "";
+
+            if (pickMarker) {
+                pickMarker.remove();
+                pickMarker = null;
+            }
+            pickMarker = new mapboxgl.Marker({ color: "#0f172a" })
+                .setLngLat([prefill.lng, prefill.lat])
+                .addTo(map);
+
+            if (mapCardBody) mapCardBody.textContent = "Posição selecionada. Completa e guarda a ocorrência.";
+        } else {
+            if (occAddress) occAddress.value = "";
+            if (occArea) occArea.value = "";
+            if (occLat) occLat.value = "";
+            if (occLng) occLng.value = "";
+
+            if (pickMarker) {
+                pickMarker.remove();
+                pickMarker = null;
+            }
+
+            if (mapCardBody) mapCardBody.textContent = "Para escolher no mapa, clica em “Escolher no mapa”.";
         }
 
-        pickMode = true;
+        // dentro do modal: não dá para clicar no mapa por trás
+        pickMode = false;
         occModal.classList.remove("hidden");
-        if (mapCardBody) mapCardBody.textContent = "Modo seleção: clica no mapa para escolher a posição.";
     }
 
     function closeOccModal() {
         pickMode = false;
+        pickForOccurrence = false;
         if (occModal) occModal.classList.add("hidden");
         if (mapCardBody) mapCardBody.textContent = "Clica num ponto para ver detalhes.";
     }
 
+    // Photo preview (optional)
     if (occPhoto && occPhotoPreview) {
         occPhoto.addEventListener("change", () => {
             const file = occPhoto.files && occPhoto.files[0] ? occPhoto.files[0] : null;
+
             if (!file) {
                 occPhotoPreview.src = "";
                 occPhotoPreview.classList.add("hidden");
@@ -483,17 +563,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     [btnNewOccurrence, btnNewOccurrenceMobile].forEach((btn) => {
         if (!btn) return;
-        btn.addEventListener("click", openOccModal);
+        btn.addEventListener("click", () => openOccModal(null));
     });
 
     [occBackdrop, occClose].forEach((el) => {
         if (el) el.addEventListener("click", closeOccModal);
     });
 
+    // Fix: Escolher no mapa fecha o modal e deixa clicar no mapa
     if (btnPickOnMap) {
         btnPickOnMap.addEventListener("click", () => {
+            pickForOccurrence = true;
+            pendingPickedPoint = null;
+
+            closeOccModal(); // fecha para permitir clique no mapa
             pickMode = true;
-            if (mapCardBody) mapCardBody.textContent = "Modo seleção: clica no mapa para escolher a posição.";
+
+            if (mapCardBody) mapCardBody.textContent = "Agora clica no mapa para selecionar a posição da ocorrência.";
+            window.scrollTo({ top: 0, behavior: "smooth" });
         });
     }
 
@@ -516,7 +603,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 async (pos) => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
-                    setPickPoint(lng, lat, true);
+
+                    // Usa o mesmo fluxo do pick no mapa (sem fechar modal)
+                    // Aqui pode preencher direto e manter modal aberto
+                    const geo = await reverseGeocode(lng, lat).catch(() => ({ address: "", area: "" }));
+                    openOccModal({ lat, lng, address: geo.address || "", area: geo.area || "" });
+                    map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14) });
                 },
                 () => {
                     if (occError) {
@@ -528,12 +620,6 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         });
     }
-
-    map.on("click", async (e) => {
-        if (!pickMode) return;
-        const { lng, lat } = e.lngLat;
-        setPickPoint(lng, lat, true);
-    });
 
     async function reverseGeocode(lng, lat) {
         const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=pt&limit=1`;
@@ -555,30 +641,33 @@ document.addEventListener("DOMContentLoaded", () => {
         return { address, area };
     }
 
-    async function setPickPoint(lng, lat, fly) {
-        if (occLat) occLat.value = String(lat);
-        if (occLng) occLng.value = String(lng);
+    // Click on map to pick point (reabre modal preenchido se for fluxo de ocorrência)
+    map.on("click", async (e) => {
+        if (!pickMode) return;
 
-        if (pickMarker) {
-            pickMarker.remove();
-            pickMarker = null;
-        }
+        const { lng, lat } = e.lngLat;
 
-        pickMarker = new mapboxgl.Marker({ color: "#0f172a" }).setLngLat([lng, lat]).addTo(map);
-
-        if (fly) map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14) });
-
+        let address = "";
+        let area = "";
         try {
-            const { address, area } = await reverseGeocode(lng, lat);
-            if (occAddress) occAddress.value = address;
-            if (occArea) occArea.value = area;
-        } catch (err) {
-            // ignore
+            const geo = await reverseGeocode(lng, lat);
+            address = geo.address || "";
+            area = geo.area || "";
+        } catch (_) { }
+
+        pendingPickedPoint = { lat, lng, address, area };
+
+        if (pickForOccurrence) {
+            pickMode = false;
+            pickForOccurrence = false;
+
+            map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14) });
+            openOccModal(pendingPickedPoint);
+            return;
         }
+    });
 
-        if (mapCardBody) mapCardBody.textContent = "Posição selecionada. Preenche o formulário e guarda a ocorrência.";
-    }
-
+    // Save occurrence
     if (occForm) {
         occForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -640,6 +729,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            // Optional photo upload + register
             const file = occPhoto && occPhoto.files && occPhoto.files[0] ? occPhoto.files[0] : null;
             if (file) {
                 try {
@@ -673,6 +763,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // ====== AUTH STATE -> UI ======
     async function refreshAuthUI() {
         const { data: userData } = await supabase.auth.getUser();
         const user = userData?.user;
@@ -683,7 +774,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (userBadge) {
             userBadge.classList.toggle("hidden", !isLoggedIn);
-            userBadge.textContent = isLoggedIn ? user.email || "" : "";
+            userBadge.textContent = isLoggedIn ? (user.email || "") : "";
         }
 
         const goDashBtn = ensureGoDashboardButton();
@@ -721,6 +812,7 @@ document.addEventListener("DOMContentLoaded", () => {
         await refreshAuthUI();
     });
 
+    // ====== INIT ======
     (async () => {
         await refreshAuthUI();
         await loadPotholes();
